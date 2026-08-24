@@ -1,0 +1,226 @@
+---
+title: "How color.xima.work is built"
+description: "465 gradients where the catalogue is a stylesheet and the copy-ready code is derived from it at build time. Architecture, search, Tailwind."
+category: "Engineering"
+pubDate: 2026-08-21
+cover: "../../../assets/blog/color.xima.work.png"
+coverAlt: "The color.xima.work logo: a hand-drawn monogram among gradient tiles"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+color.xima.work is a gallery of CSS gradients. You arrive with your editor open,
+find the one you want by eye, copy the code as CSS3 or Tailwind v4, and leave.
+Sessions are short, and the whole site is built around that.
+
+Inside there are 465 gradients and one architectural decision that everything
+else follows from.
+
+<ProjectLink
+	href="https://color.xima.work"
+	title="color.xima.work"
+	description="A gradient gallery: search, filters, copy as CSS3 or Tailwind."
+	repo="https://github.com/proxima812/color.xima.work"
+/>
+
+## The catalogue is a stylesheet
+
+A gallery like this normally stores gradients as data: an array of objects with
+colours, angles and stops, from which the preview and the snippet are assembled
+by two separate pieces of code. Here it works the other way round.
+
+The source of truth is `src/styles/gradients.css`, nearly four thousand lines of
+real CSS rules. And `src/data/colors.json` is a flat index of 465 entries, each
+carrying exactly four fields:
+
+```json
+{
+	"id": "glow-aurora-cyan",
+	"name": "glow-aurora-cyan",
+	"index": 0,
+	"className": "radial-glow-aurora-cyan"
+}
+```
+
+No colours, no angles, no stops. Just the class name whose real rule lives in the
+stylesheet.
+
+From that follows the important part: **the preview on the page is rendered by
+exactly the same rule the copy button hands you**. Not "generated from the same
+data" but literally the same. There is nothing for them to drift apart on.
+
+## The snippet is derived from the CSS at build time
+
+At build time, `src/data/css-snippets.ts` reads `gradients.css`, finds the rule
+by class name and pulls out its body:
+
+```ts
+const ruleRegex = new RegExp(
+	`(^|\\n)\\s*\\.${escapedClass}\\s*\\{([\\s\\S]*?)\\n\\s*\\}`,
+	"m",
+);
+```
+
+The body is then split into property and value pairs, from which a tidy CSS3
+snippet is assembled along with a Tailwind v4 variant. Both are highlighted with
+Shiki right there at build time, so the browser receives finished HTML with no
+runtime highlighting.
+
+A regular expression over CSS is usually a bad idea, but here it runs against the
+project's own file with known formatting, not arbitrary input. The cost of a miss
+is visible immediately: no rule found means `/* style not found */` lands in the
+snippet.
+
+## The Tailwind converter
+
+The least trivial part is turning ordinary declarations into Tailwind v4
+arbitrary utilities. Naively replacing spaces with underscores breaks on the very
+first gradient: `radial-gradient()` contains commas and spaces that must not be
+split on.
+
+So the split happens by bracket depth:
+
+```ts
+function splitTopLevel(value: string, separator: "," | " "): string[] {
+	let depth = 0;
+	for (const character of value) {
+		if (character === "(" || character === "[") depth += 1;
+		else if (character === ")" || character === "]") depth -= 1;
+		const isSeparator = depth === 0 && /* ... */ false;
+	}
+}
+```
+
+Border shorthand gets its own handling: `1px solid rgba(...)` becomes not a
+single `[border:...]` class but three - `border`, `border-solid` and
+`border-[rgba(...)]`, the way a person would write it.
+
+A small thing, but small things like this are what keep pasted code from looking
+machine-made.
+
+## Search
+
+Search is Fuse.js in the browser, over an index embedded in the page. Six fields
+with weights:
+
+| Field | Weight |
+| --- | --- |
+| `name` | 0.42 |
+| `description` | 0.24 |
+| `tags` | 0.16 |
+| `className` | 0.1 |
+| `visibleId` | 0.05 |
+| `id` | 0.03 |
+
+A fuzziness threshold of 0.36 and `ignoreLocation: true`, so a match counts
+anywhere in the string rather than only at the start.
+
+There are two search surfaces and they stay out of each other's way: a global
+overlay on `Cmd/Ctrl+K` in the header of every page, at most eight results
+linking straight to detail pages, and an ordinary field on the catalogue page. On
+pages that render the field, the overlay yields the shortcut and stays
+click-only.
+
+## Descriptions are synthesised
+
+An interesting detail: the gradients have no hand-written descriptions. They are
+assembled from the name:
+
+```ts
+export function getDescription(name: string, id: number): string {
+	const usage = usages[(id * 3 + 1) % usages.length];
+	const type = getTypeLabel(name);
+	const palette = getPalette(name);
+
+	return clamp(`${type} with ${palette} palette, optimized ${usage}.`, "for modern UI");
+}
+```
+
+The type comes from the name prefix, the palette from the remaining tokens, and
+the usage phrase is picked deterministically by `id`, so one gradient always gets
+the same one. The phrase list is finite: hero sections with contrast typography,
+product cards, dark dashboards and a few more.
+
+The decision is arguable but honest: nobody is going to write 465 descriptions by
+hand, and deterministic generation at least keeps the text stable between builds
+while giving search one more field to match on.
+
+## Tags
+
+Fourteen tags: `glow`, `mesh`, `linear`, `radial`, `conic`, `repeating`,
+`multi-stop`, `transparent`, `border`, `noise`, `femme`, `masc`, `flag`, `other`.
+They are not assigned by hand but derived from the name prefix:
+
+```ts
+if (name.startsWith("flag-")) return ["flag"];
+if (name.startsWith("mesh-neo-") || name.startsWith("mesh-")) return ["mesh"];
+if (name.startsWith("glow-")) return ["glow"];
+```
+
+Naming discipline stands in for metadata. As long as names follow the convention,
+tags, filters and collections come for free. The moment a name breaks the
+convention, the gradient drops into `other` - silently.
+
+## Routes
+
+```txt
+/                     the main gallery
+/cards/               every card with copy buttons
+/gradient/[slug]/     a single gradient page
+/collection/[tag]/    a collection by tag
+/generator/           generator: block, text, presets
+/generator/mesh/      mesh gradients
+/generator/instagram/ an Instagram post
+/picks/               curated picks
+/daily/               redirect to the gradient of the day
+/random/              redirect to a random one
+/favorites/           favourites
+```
+
+`/daily/` and `/random/` are redirects rather than pages: on a static site that
+is cheaper than rendering the same thing under several addresses.
+
+## Static and deployment
+
+Astro 5 in static mode, Tailwind v4, deployed to Vercel. Caching is one rule in
+`vercel.json` - a week plus `stale-while-revalidate` on every response.
+
+There is a single static OG image for the whole site, rebuilt with `bun run og`.
+For a gallery that is sensible: drawing an Open Graph preview per gradient is a
+lot of work for pages that are rarely shared.
+
+## Licences
+
+Two of them, and that is the right call:
+
+- the repository code is **MIT**;
+- the gradients themselves are **CC0**, public domain. Take them into any
+  project, commercial included, with no attribution.
+
+For a gallery whose product is the snippets, the second licence matters more than
+the first. Without it there is no telling whether the copied code may be used at
+all.
+
+## What catches the eye
+
+Three notes from the code. Observations, not complaints.
+
+**Search matches names, not colour.** The index holds no hue and no lightness,
+only strings. A query for `cyan` finds `glow-aurora-cyan` because the word is in
+the name, but there is no way to ask for "something cool and dark". For a gallery
+where the main selection method is your eyes that is a deliberate trade, but the
+ceiling of text search is visible here.
+
+**`wrangler` sits in the dependencies while deployment goes to Vercel.**
+`@astrojs/vercel` is right next to it and the deploy config is `vercel.json`. It
+looks like a leftover from an earlier attempt to move to Cloudflare.
+
+**Tags fall into `other` silently.** Nothing checks that every gradient ends up
+with a meaningful tag. One gradient with a non-standard name disappears from
+every filter without saying so.
+
+<ProjectLink
+	href="https://github.com/proxima812/color.xima.work"
+	title="The source"
+	description="Astro 5, Tailwind v4, Fuse.js. Code under MIT, gradients under CC0."
+/>

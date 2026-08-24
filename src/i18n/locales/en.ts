@@ -7,7 +7,7 @@ export default {
 
 	"home.heading": "I have something to say",
 	"home.switcher": "Русский",
-	"home.cta.articles": "Articles",
+	"home.cta.articles": "All articles/posts",
 	"home.cta.projects": "Projects",
 
 	"nav.back": "Back to home",

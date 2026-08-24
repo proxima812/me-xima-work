@@ -7,7 +7,7 @@ export default {
 
 	"home.heading": "У меня есть, что сказать",
 	"home.switcher": "English",
-	"home.cta.articles": "Статьи",
+	"home.cta.articles": "Все статьи/посты",
 	"home.cta.projects": "Проекты",
 
 	"nav.back": "На главную",
