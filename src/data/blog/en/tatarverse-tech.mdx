@@ -7,7 +7,11 @@ cover: "../../../assets/blog/1.png"
 coverAlt: "The tatarverse logo: a tulip in a rounded square"
 ---
 
+import Figure from "@/components/blog/Figure.astro";
 import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import home from "../../../assets/blog/tatarverse-home.jpg";
+import centers from "../../../assets/blog/tatarverse-centers.jpg";
 
 tatarverse.cc is a catalogue of Tatar, Bashkir and Crimean Tatar centres,
 communities and initiatives: 420 entries across 53 countries. The code is fully
@@ -18,6 +22,11 @@ of, where the traps were, and where to start if you want to help.
 	href="https://github.com/proxima812/tatarverse"
 	title="proxima812/tatarverse"
 	description="The source: Astro 7, MDX, Tailwind v4, Cloudflare Pages."
+/>
+
+<Figure
+	src={home}
+	alt="The tatarverse.cc home page: the headline, a button to 420 centres and the statistics block"
 />
 
 ## Why static
@@ -67,6 +76,11 @@ derived from the country name through `countryFlagsByRu` in
 
 Entry slugs are stable, shaped like `tbk-389`. They cannot be changed: links
 already circulating in chats and on centre websites depend on them.
+
+<Figure
+	src={centers}
+	alt="The centres catalogue: search, facets by country and region, a live count on every filter"
+/>
 
 ## The design system: two files that must agree
 

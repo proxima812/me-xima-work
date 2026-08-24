@@ -1,19 +1,24 @@
 ---
 title: "How color.xima.work is built"
-description: "465 gradients where the catalogue is a stylesheet and the copy-ready code is derived from it at build time. Architecture, search, Tailwind."
+description: "388 gradients where the catalogue is a stylesheet and the copy-ready code is derived from it at build time. Architecture, search, Tailwind."
 category: "Engineering"
 pubDate: 2026-08-21
 cover: "../../../assets/blog/color.xima.work.png"
 coverAlt: "The color.xima.work logo: a hand-drawn monogram among gradient tiles"
 ---
 
+import Figure from "@/components/blog/Figure.astro";
 import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import home from "../../../assets/blog/color-xima-home.jpg";
+import cards from "../../../assets/blog/color-xima-cards.jpg";
+import pantone from "../../../assets/blog/color-xima-pantone.jpg";
 
 color.xima.work is a gallery of CSS gradients. You arrive with your editor open,
 find the one you want by eye, copy the code as CSS3 or Tailwind v4, and leave.
 Sessions are short, and the whole site is built around that.
 
-Inside there are 465 gradients and one architectural decision that everything
+Inside there are 388 gradients and one architectural decision that everything
 else follows from.
 
 <ProjectLink
@@ -23,15 +28,20 @@ else follows from.
 	repo="https://github.com/proxima812/color.xima.work"
 />
 
+<Figure
+	src={home}
+	alt="The color.xima.work home page: the headline, a button to 388 gradients and a strip of previews"
+/>
+
 ## The catalogue is a stylesheet
 
 A gallery like this normally stores gradients as data: an array of objects with
 colours, angles and stops, from which the preview and the snippet are assembled
 by two separate pieces of code. Here it works the other way round.
 
-The source of truth is `src/styles/gradients.css`, nearly four thousand lines of
-real CSS rules. And `src/data/colors.json` is a flat index of 465 entries, each
-carrying exactly four fields:
+The source of truth is `src/styles/gradients.css`, 3,389 lines of real CSS
+rules. And `src/data/colors.json` is a flat index of 388 entries, each carrying
+exactly four fields:
 
 ```json
 {
@@ -98,6 +108,11 @@ single `[border:...]` class but three - `border`, `border-solid` and
 A small thing, but small things like this are what keep pasted code from looking
 machine-made.
 
+<Figure
+	src={cards}
+	alt="The /cards page: search, tag chips with counts and a grid of cards with a copy button"
+/>
+
 ## Search
 
 Search is Fuse.js in the browser, over an index embedded in the page. Six fields
@@ -141,8 +156,8 @@ the usage phrase is picked deterministically by `id`, so one gradient always get
 the same one. The phrase list is finite: hero sections with contrast typography,
 product cards, dark dashboards and a few more.
 
-The decision is arguable but honest: nobody is going to write 465 descriptions by
-hand, and deterministic generation at least keeps the text stable between builds
+The decision is arguable but honest: nobody is going to write close to four
+hundred descriptions by hand, and deterministic generation at least keeps the text stable between builds
 while giving search one more field to match on.
 
 ## Tags
@@ -161,6 +176,37 @@ Naming discipline stands in for metadata. As long as names follow the convention
 tags, filters and collections come for free. The moment a name breaks the
 convention, the gradient drops into `other` - silently.
 
+## Pruning the catalogue
+
+A recent pass over the catalogue shows what this architecture buys you. Of 465
+entries, 162 were removed, 85 added and 66 renamed, leaving 388. The reasoning
+for every change sits next to it in `PRUNE.md` rather than drowning in a diff:
+byte-identical duplicates, near-indistinguishable pairs, gradients whose names
+nobody would ever search for.
+
+Because the catalogue is a stylesheet, the prune came down to deleting rules from
+the CSS and entries from the index. Neither previews nor snippets had to be
+rebuilt: they are derived from that same file anyway.
+
+## Pantone Color of the Year
+
+A new section at `/pantone/`: every Pantone pick since 2000, each with its TCX
+code, hex and RGB. Two years shipped a pair rather than a single colour, 2016 and
+2021, and they render as a split swatch.
+
+The honesty in the data comment is worth noting: Pantone picks colours for
+physical inks and textiles, so every hex here is the widely published sRGB
+approximation of the TCX chip rather than an exact conversion, and two sources
+can disagree by a point or two.
+
+Each chip also becomes a three-stop CSS gradient - a tint, the chip, then a
+shade - so a year can be dropped straight into a layout.
+
+<Figure
+	src={pantone}
+	alt="The Pantone section: the 2026 colour Cloud Dancer as a large swatch with a 27-year strip below"
+/>
+
 ## Routes
 
 ```txt
@@ -171,6 +217,7 @@ convention, the gradient drops into `other` - silently.
 /generator/           generator: block, text, presets
 /generator/mesh/      mesh gradients
 /generator/instagram/ an Instagram post
+/pantone/             Pantone Color of the Year since 2000
 /picks/               curated picks
 /daily/               redirect to the gradient of the day
 /random/              redirect to a random one

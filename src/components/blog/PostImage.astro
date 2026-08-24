@@ -1,0 +1,21 @@
+---
+/**
+ * Замена тега `img` в контенте поста: картинка из markdown получает видимую
+ * подпись из `alt`. Alt все равно приходится писать для доступности - пусть
+ * он работает и на зрячего читателя, а не только на скринридер.
+ *
+ * У `<figure>` тут нет `role`: подпись дублирует alt, и скринридер иначе
+ * прочитает один и тот же текст дважды.
+ */
+export interface Props {
+	src?: string;
+	alt?: string;
+}
+
+const { src = "", alt = "", ...rest } = Astro.props;
+---
+
+<figure>
+	<img src={src} alt={alt} {...rest}>
+	{alt && <figcaption>{alt}</figcaption>}
+</figure>

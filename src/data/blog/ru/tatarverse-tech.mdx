@@ -7,7 +7,11 @@ cover: "../../../assets/blog/1.png"
 coverAlt: "Логотип tatarverse: тюльпан в скругленном квадрате"
 ---
 
+import Figure from "@/components/blog/Figure.astro";
 import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import home from "../../../assets/blog/tatarverse-home.jpg";
+import centers from "../../../assets/blog/tatarverse-centers.jpg";
 
 tatarverse.cc - каталог татарских, башкирских и крымскотатарских центров,
 сообществ и инициатив: 420 карточек в 53 странах. Код открыт целиком, включая
@@ -18,6 +22,11 @@ tatarverse.cc - каталог татарских, башкирских и кр�
 	href="https://github.com/proxima812/tatarverse"
 	title="proxima812/tatarverse"
 	description="Исходники: Astro 7, MDX, Tailwind v4, Cloudflare Pages."
+/>
+
+<Figure
+	src={home}
+	alt="Главная tatarverse.cc: заголовок «Найди своих рядом», кнопка на 420 центров и блок статистики"
 />
 
 ## Почему статика
@@ -67,6 +76,11 @@ tatarverse.cc - каталог татарских, башкирских и кр�
 
 Слаги карточек стабильные, вида `tbk-389`. Менять их нельзя: на них завязаны
 ссылки, которые уже разошлись по чатам и сайтам самих центров.
+
+<Figure
+	src={centers}
+	alt="Каталог центров: поиск, фасеты по стране и региону, счетчики у каждого фильтра"
+/>
 
 ## Дизайн-система: два файла, которые обязаны совпадать
 

@@ -28,5 +28,10 @@ const COLUMN_CLASS = {
 ---
 
 <div class:list={["post-gallery", COLUMN_CLASS[columns]]}>
-	{images.map(({ src, alt }) => <Image src={src} alt={alt} />)}
+	{images.map(({ src, alt }) => (
+		<figure>
+			<Image src={src} alt={alt} />
+			{alt && <figcaption>{alt}</figcaption>}
+		</figure>
+	))}
 </div>
