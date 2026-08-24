@@ -1,0 +1,210 @@
+---
+title: "Astro Starter: a review without the pitch"
+description: "What the starter does well, what it does not contain at all, and where it tripped me up while building this site. With numbers from the repository."
+category: "Engineering"
+pubDate: 2026-08-24
+cover: "../../../assets/blog/starter.png"
+coverAlt: "The Astro Starter logo: the Astro mark and the word STARTER in a gradient"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+The starter is mine, so this text is arranged accordingly: first what is
+genuinely good about it, then what it does not contain at all, and finally where
+it tripped me up while I was building this blog on it. Praising your own work is
+easy, so the second and third parts are longer than the first.
+
+<ProjectLink
+	href="https://github.com/proxima812/astro-starter"
+	title="proxima812/astro-starter"
+	description="A base for SEO-oriented static sites."
+/>
+
+## What it is, in numbers
+
+1,683 lines in `src`, 8 Astro components, 3 pages, 6 integrations, 13
+dependencies and 5 dev dependencies. The repository was created in April 2026,
+last touched in August, three stars, one author. This is not a framework or a
+theme but a couple of evenings of groundwork you would rather not redo every
+time.
+
+The stack holds no surprises: Astro 7 in static mode, Tailwind v4 through
+`@tailwindcss/vite`, TypeScript in strict mode, Biome instead of ESLint plus
+Prettier, Bun as the package manager.
+
+## The idea: one file to edit
+
+The starter's central decision is that the whole project is configured from
+`main.config.ts`, and that file is 98 lines. It holds the URL, the name, the
+locales, Open Graph, theme colours, domain verification, analytics and feature
+flags.
+
+That sounds like an ordinary `config.js`, but the difference is what sits next to
+it: a contract in `src/config/types.ts` and checks in `src/config/validate.ts`
+that fail on `dev` and `build` startup.
+
+```ts
+export type AnalyticsProvider<TId> =
+	| { readonly enabled: false }
+	| { readonly enabled: true; readonly id: TId };
+```
+
+This is a discriminated union, and it makes a whole category of mistakes
+impossible: you cannot enable analytics without an id, because it will not
+compile. The same holds for IndexNow, which cannot exist without a key.
+
+The technique is not new, but it is rare in starters. Usually the config is an
+object with a dozen optional fields plus a paragraph in the README explaining
+which of them become mandatory once a given feature is on. Here the compiler
+plays that role.
+
+## Checking the build, not the intent
+
+The second thing the starter takes seriously is `bun run verify`: lint, types, a
+build, and 177 lines of a validator that opens **every page in `dist`** and
+checks:
+
+- whether `<title>` and the meta description are present,
+- whether canonical is there,
+- whether the Open Graph set is complete,
+- whether the JSON-LD parses as JSON,
+- whether `<html lang>` is set,
+- how many `h1` elements the page has,
+- whether 404 carries `noindex`,
+- whether every local asset link actually exists in `dist`.
+
+The gap between "I added the meta tags" and "they are in the built HTML" is
+exactly the gap where SEO changes usually slip away unnoticed. The validator
+checks the second one.
+
+Features turn off honestly: `enabled: false` leaves no file in `dist`, no tag in
+the HTML and no line in `robots.txt`. I checked this on my own addition - added
+comments and ran the build in both flag states. Zero traces.
+
+## The agent layer
+
+The repository carries `AGENTS.md` and nine skills in `.agents/skills/`:
+architecture, code style, dependencies, feature development, i18n, SEO, Tailwind,
+TypeScript, validation. Symlinks in `.claude/skills/` hand the same set to Claude
+Code and Codex.
+
+This is not decoration. The `starter-tailwind` skill explicitly forbids
+hard-coding colours outside the tokens, `starter-dependencies` lists removed
+packages and the reasons, so nobody brings them back, and `starter-validation`
+defines what counts as done. An agent that reads these files behaves far more
+predictably in the project than one that does not.
+
+## What it does not contain
+
+Now the honest part.
+
+**There is no licence.** The repository has no licence at all. Formally that
+means no rights are granted to anyone: cloning this "starter" and building a
+commercial project on it is not legally possible. For groundwork created
+specifically to be cloned, that is the single biggest omission.
+
+**There is no CI.** The repository has no `.github` directory. `bun run verify`
+exists, but nothing stops you from pushing a broken build. The check rests on
+discipline.
+
+**There are no tests.** Not one test file. For 1,683 lines where half is artifact
+generation and config validation, that shows: both the config validator and the
+SEO checker are exactly the kind of code that is easy to test and pays off fast.
+
+**The repository is not marked as a template.** GitHub's "Use this template" does
+not work, so you clone and detach the history by hand. And the history is a
+single commit, so there is no way to see what changed between versions.
+
+**There is no content at all.** No content collections, no blog example, not one
+`mdx` file - even though `@astrojs/mdx` is in the dependencies. Three pages: the
+home page, its English version and 404.
+
+**There is no dark theme.** The tokens carry a single palette.
+
+**A few dependencies are there for later.** `@iconify-json/mdi` is never used,
+`astro-icon` is registered with an empty `include: {}`, and
+`@tailwindcss/typography` is loaded through `@plugin` while the `prose` class
+never appears in the starter. None of this affects the weight of a finished site,
+since Tailwind v4 generates classes on use and Astro does not bundle what is not
+used, but they are there in the install and in the dependency surface.
+
+## Where it tripped me up
+
+This blog is built on the starter, and three things only surfaced in real work.
+
+### The Cloudflare Pages build fails out of the box
+
+The most serious one. `@dualmark/astro@0.10.0`, the latest version, declares a
+peer dependency of `astro@^6.1.10`, while the starter ships Astro 7. Bun passes
+over that conflict silently, so everything installs and runs locally. Cloudflare
+Pages installs dependencies with `npm install` and fails:
+
+```txt
+npm error ERESOLVE unable to resolve dependency tree
+npm error Found: astro@7.2.4
+npm error Could not resolve dependency:
+npm error peer astro@"^6.1.10" from @dualmark/astro@0.10.0
+```
+
+The deploy never starts. The cure is an `.npmrc` with `legacy-peer-deps=true` or
+switching the host's build to Bun, but you can only learn this on your first
+deploy. The starter carries neither.
+
+### You will write the blog yourself
+
+Expected, but I underestimated the scale. To get an ordinary blog on top of the
+starter I had to write: the collection definition, the post query, a card, a
+grid, the article component, styles for every markdown tag, tag substitution
+through the `components` prop on `<Content />`, figure and gallery components, a
+scrolling table wrapper and a code block with a header. That is a dozen files and
+several hours.
+
+The starter is about the SEO skeleton, not about content, and the README says so.
+But if you came for a blog, this is not what you came for.
+
+### Markdown twins need manual work
+
+`llms.txt` and the markdown versions of pages are assembled from explicitly
+listed `staticPages` and `sections` in `astro.config.mjs`. Add a page and you go
+and register it in two more places, otherwise it never gets a twin. The README
+warns about this honestly, but it is exactly the kind of manual synchronisation
+that drifts first.
+
+### Linting does not cover everything
+
+`biome.json` excludes `public/` and `src/components/SEO/Analytics/**`, and there
+are reasons: Biome reformats SVGs in `public/` and cannot parse inline JavaScript
+inside `.astro`, where its support is experimental. The reasons are documented in
+`AGENTS.md`, but the fact stands: part of the code sits outside the checks.
+
+## Who it suits
+
+**It suits you** if you build static Astro sites regularly and similarly:
+landing pages, corporate pages, documentation. Then the starter saves several
+evenings of SEO plumbing that you would otherwise rewrite every time, forgetting
+half of it every time.
+
+**It suits you** if you like the idea that configuration should be checked by the
+compiler and the result by a validator over `dist`, rather than by eye.
+
+**It does not suit you** if you need a ready blog, a set of UI components or a
+theme. There are none here and none planned - this is a frame, not a showcase.
+
+**It does not suit you** if you need legal clarity: without a licence you cannot
+take someone else's code into a commercial project.
+
+## What I would fix first
+
+In descending order of importance: the licence, an `.npmrc` or a documented way
+to build on an npm-based host, a GitHub Action running `bun run verify`, tests
+for the config validator and the SEO checker, and marking the repository as a
+template.
+
+The first two are half an hour of work, and they turn groundwork built "for
+myself" into groundwork you can hand to someone else.
+
+<ProjectLink
+	href="https://github.com/proxima812/astro-starter"
+	title="The starter's source"
+	description="Astro 7, Tailwind v4, TypeScript strict, Bun."
+/>
