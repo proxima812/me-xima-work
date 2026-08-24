@@ -21,6 +21,8 @@ export default {
 	"article.code.open": "Open",
 	"article.code.openInBrowser": "Open in browser",
 
+	"comments.label": "Comments",
+
 	"projects.title": "Projects",
 	"projects.description": "Links to my projects.",
 	"projects.code": "code",

@@ -92,6 +92,20 @@ export const config: AppConfig = {
 			googleTagManager: { enabled: false },
 			yandexMetrika: { enabled: false },
 		},
+
+		/*
+		 * Комментарии под постами - обсуждения GitHub через giscus.
+		 * ID берутся на https://giscus.app по адресу репозитория; там же
+		 * надо один раз поставить приложение giscus на сам репозиторий.
+		 * Язык виджета задается локалью страницы, а не здесь.
+		 */
+		comments: {
+			enabled: true,
+			repo: "proxima812/me-xima-work",
+			repoId: "R_kgDOUB33Qw",
+			category: "General",
+			categoryId: "DIC_kwDOUB33Q84DEC8J",
+		},
 	},
 };
 

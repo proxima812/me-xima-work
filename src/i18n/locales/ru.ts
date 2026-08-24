@@ -21,6 +21,8 @@ export default {
 	"article.code.open": "Открыть",
 	"article.code.openInBrowser": "Открыть в браузере",
 
+	"comments.label": "Комментарии",
+
 	"projects.title": "Проекты",
 	"projects.description": "Ссылки на мои проекты.",
 	"projects.code": "код",

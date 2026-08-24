@@ -13,6 +13,7 @@ const LOCALE_CODE = /^[a-z]{2,3}(-[A-Z]{2})?$/;
 const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const GTM_ID = /^GTM-[A-Z0-9]{4,}$/i;
 const INDEXNOW_KEY = /^[A-Za-z0-9-]{8,128}$/;
+const GITHUB_REPO = /^[\w.-]+\/[\w.-]+$/;
 
 export interface ValidateOptions {
 	/** Абсолютный путь к `public/` - для проверки наличия ассетов. */
@@ -108,6 +109,20 @@ export function validateConfig(
 			errors.push(
 				`analytics.yandexMetrika.id - ожидается положительное целое, получено ${id}`,
 			);
+		}
+	}
+
+	// ── Комментарии ───────────────────────────────────────────────────
+	const { comments } = site;
+
+	if (comments.enabled) {
+		if (!GITHUB_REPO.test(comments.repo)) {
+			errors.push(
+				`site.comments.repo - ожидается owner/repo, получено ${comments.repo}`,
+			);
+		}
+		if (!comments.category.trim()) {
+			errors.push("site.comments.category - пустое название категории");
 		}
 	}
 

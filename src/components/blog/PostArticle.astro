@@ -2,6 +2,7 @@
 import { Image } from "astro:assets";
 import { type CollectionEntry, render } from "astro:content";
 import CodeBlock from "@/components/blog/CodeBlock.astro";
+import Comments from "@/components/blog/Comments.astro";
 import PostLink from "@/components/blog/PostLink.astro";
 import PostTable from "@/components/blog/PostTable.astro";
 import BackLink from "@/components/ui/BackLink.astro";
@@ -55,6 +56,8 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 		<Content components={{ a: PostLink, pre: CodeBlock, table: PostTable }} />
 	</div>
 </article>
+
+<Comments locale={locale} />
 
 <style>
 @reference "@/styles/tailwind.css";

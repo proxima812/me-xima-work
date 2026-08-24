@@ -61,6 +61,31 @@ export interface AnalyticsConfig {
 	readonly yandexMetrika: YandexMetrikaConfig;
 }
 
+/** `owner/repo` на GitHub - туда giscus пишет обсуждения. */
+export type GiscusRepo = `${string}/${string}`;
+/** Node ID репозитория из giscus.app, всегда начинается с `R_`. */
+export type GiscusRepoId = `R_${string}`;
+/** Node ID категории обсуждений, всегда начинается с `DIC_`. */
+export type GiscusCategoryId = `DIC_${string}`;
+
+/**
+ * Комментарии через giscus: обсуждения GitHub под постами.
+ *
+ * Значения берутся на https://giscus.app - там же надо один раз поставить
+ * приложение giscus на репозиторий, иначе виджет отрисуется с ошибкой.
+ * Язык виджета не настраивается: он берется из локали страницы.
+ */
+export type CommentsConfig =
+	| { readonly enabled: false }
+	| {
+			readonly enabled: true;
+			readonly repo: GiscusRepo;
+			readonly repoId: GiscusRepoId;
+			/** Название категории обсуждений, например `General`. */
+			readonly category: string;
+			readonly categoryId: GiscusCategoryId;
+	  };
+
 /**
  * IndexNow. Включенный вариант обязан нести ключ - стартер сам отдаст
  * `/<key>.txt` для верификации, руками файл создавать не нужно.
@@ -125,6 +150,7 @@ export interface SiteConfig {
 	readonly theme: { readonly colors: ThemeColors };
 	readonly verifications: readonly SiteVerification[];
 	readonly analytics: AnalyticsConfig;
+	readonly comments: CommentsConfig;
 }
 
 export interface AppConfig {

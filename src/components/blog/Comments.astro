@@ -1,0 +1,44 @@
+---
+/**
+ * Комментарии под постом - обсуждения GitHub через giscus.
+ *
+ * Виджет грузится с giscus.app сторонним скриптом, поэтому он тут инлайновый:
+ * Astro не должен его бандлить. Настройки приходят из `main.config.ts`,
+ * в компоненте остается только то, что зависит от страницы - язык и тема.
+ */
+
+import { config } from "main.config";
+import type { LocaleCode } from "@/config/types";
+import { useTranslations } from "@/i18n";
+
+export interface Props {
+	locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const { comments } = config.site;
+const t = useTranslations(locale);
+---
+
+{comments.enabled && (
+	<section aria-label={t("comments.label")} class="giscus w-full">
+		<script
+			is:inline
+			src="https://giscus.app/client.js"
+			data-repo={comments.repo}
+			data-repo-id={comments.repoId}
+			data-category={comments.category}
+			data-category-id={comments.categoryId}
+			data-mapping="pathname"
+			data-strict="1"
+			data-reactions-enabled="1"
+			data-emit-metadata="0"
+			data-input-position="top"
+			data-theme="light"
+			data-lang={locale}
+			data-loading="lazy"
+			crossorigin="anonymous"
+			async
+		/>
+	</section>
+)}
