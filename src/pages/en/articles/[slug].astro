@@ -1,0 +1,39 @@
+---
+import PostArticle from "@/components/blog/PostArticle.astro";
+import { buildAlternates } from "@/i18n";
+import Layout from "@/layouts/Layout.astro";
+import { getPostLocales, getPostSlug, getPosts } from "@/utils/blog";
+
+export async function getStaticPaths() {
+	const posts = await getPosts("en");
+
+	return Promise.all(
+		posts.map(async (post) => {
+			const slug = getPostSlug(post);
+
+			return {
+				params: { slug },
+				// Переводы считаем на сборке: hreflang должен вести
+				// только на локали, где пост действительно есть.
+				props: { post, postLocales: await getPostLocales(slug) },
+			};
+		}),
+	);
+}
+
+const { post, postLocales } = Astro.props;
+---
+
+<Layout
+	title={post.data.title}
+	description={post.data.description}
+	type="article"
+	datePublished={post.data.pubDate}
+	htmlLang="en"
+	locale="en-US"
+	alternates={buildAlternates(Astro.url.pathname, postLocales)}
+	ogImage={post.data.cover.src}
+	class="max-w-4xl"
+>
+	<PostArticle post={post} locale="en" />
+</Layout>

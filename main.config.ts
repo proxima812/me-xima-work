@@ -4,14 +4,14 @@
  * Контракт и типы: `src/config/types.ts`
  * Проверки на билде: `src/config/validate.ts`
  *
- * Всё, что помечено `enabled: true`, обязано нести свои данные — TypeScript
+ * Все, что помечено `enabled: true`, обязано нести свои данные - TypeScript
  * не даст включить аналитику без ID или IndexNow без ключа.
  */
 import type { AppConfig, SiteVerification } from "./src/config/types";
 
-const siteUrl = "https://site.kz/" as const;
-const siteName = "site.kz" as const;
-const siteLocale = "ru-KZ" as const;
+const siteUrl = "https://me.xima.work/" as const;
+const siteName = "xima.work" as const;
+const siteLocale = "ru-RU" as const;
 const siteHost = new URL(siteUrl).hostname.replace(/^www\./, "");
 
 /**
@@ -34,20 +34,20 @@ const verifications: SiteVerification[] = [
 export const config: AppConfig = {
 	// ── Фичи без дополнительных данных ────────────────────────────────
 	features: {
-		manifest: false,
+		manifest: true,
 		ai: false,
 		llms: false,
 	},
 
 	// ── IndexNow ──────────────────────────────────────────────────────
 	// Ключ: https://www.bing.com/indexnow/getstarted
-	// Файл верификации `/<key>.txt` стартер отдаёт сам.
+	// Файл верификации `/<key>.txt` стартер отдает сам.
 	// Включение: { enabled: true, key: "ваш-ключ" }
 	indexNow: { enabled: false },
 
 	// ── i18n ──────────────────────────────────────────────────────────
 	// `defaultLocale` не получает префикс в URL: `/about`, а не `/ru/about`.
-	// Остальные локали — `/en/about`. Словари — в `src/i18n/locales/`.
+	// Остальные локали - `/en/about`. Словари - в `src/i18n/locales/`.
 	i18n: {
 		defaultLocale: "ru",
 		locales: ["ru", "en"],
@@ -60,7 +60,7 @@ export const config: AppConfig = {
 
 		og: {
 			title: siteName,
-			description: `Официальный сайт ${siteHost}`,
+			description: `Личный блог ${siteName}`,
 			author: siteName,
 			locale: siteLocale,
 			siteName: siteName,
@@ -68,7 +68,7 @@ export const config: AppConfig = {
 			defaultImage: "default-ogImage.jpg",
 			imageAlt: `Превью страницы ${siteHost}`,
 			keywords: "",
-			titleSeparator: "•",
+			titleSeparator: "|",
 			twitterCard: "summary_large_image",
 			twitterSite: "",
 			twitterCreator: "",

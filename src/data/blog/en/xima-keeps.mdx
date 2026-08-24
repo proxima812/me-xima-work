@@ -1,0 +1,154 @@
+---
+title: "How xima.keeps is built"
+description: "A local Android organiser: Tauri 2, a Rust core, SQLite with FTS5, alarms through AlarmManager and spoken-phrase parsing. Not a line of network code."
+category: "Engineering"
+pubDate: 2026-08-23
+cover: "../../../assets/blog/xima.keeps.png"
+coverAlt: "The xima.keeps logo: a white sheet with a folded corner on a dark background"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+xima.keeps is notes, search across them, and system reminders on Android.
+Everything runs on the device: no server, no account, no cloud sync, no
+analytics, no internet required. Not "offline first" but simply offline. There
+is no network code in the app at all.
+
+<ProjectLink
+	href="https://github.com/proxima812/notes-android"
+	title="proxima812/notes-android"
+	description="The source: Tauri 2, Rust, React 19, SQLite."
+/>
+
+## The stack
+
+| Layer | What it is |
+| --- | --- |
+| Shell | Tauri 2 |
+| Core | Rust: business logic, SQLite, search, validation |
+| Interface | React 19, TypeScript, Tailwind CSS v4 |
+| Storage | local SQLite + FTS5 |
+| Reminders | Rust + Kotlin (`AlarmManager`, `NotificationManager`) |
+| Voice | Kotlin (`SpeechRecognizer`, device offline model only) |
+
+In numbers: 54 Rust files against 31 React components. That ratio says it all.
+The interface here is thin and the work lives in the core.
+
+## Layer boundaries
+
+Four rules that are never broken:
+
+- React does not touch SQLite and holds no business logic.
+- Kotlin only calls Android APIs and holds no business logic.
+- SQL lives in repositories, not in Tauri commands.
+- System reminders never use `setTimeout` or `setInterval`.
+
+The last one matters most. A JS timer lives exactly as long as the app process,
+while a reminder has to fire three days later on a dark screen. So alarms are set
+by `AlarmManager`, and Kotlin only remembers the ones it set itself
+(`AlarmStore`). That is not a second copy of the reminders: it is what
+`BootReceiver` hands back to the system after a reboot, without touching the
+database.
+
+```text
+src-tauri/
+├── src/
+│   ├── domain/          notes, reminders, tasks, organisation, backup,
+│   │                    app_icons, settings, search, clock, ids
+│   ├── application/     commands, use_cases, dto
+│   ├── infrastructure/  sqlite: connection, migrations, repositories
+│   └── platform/        the bridge to the Android plugins
+├── migrations/          versioned SQL migrations
+├── plugins/reminders/   Rust API + Kotlin (AlarmManager)
+├── plugins/documents/   the system file picker
+└── plugins/appicon/     launcher icon switching
+```
+
+## The schema is bigger than the product
+
+The initial migration `0001_initial.sql` was laid out for the whole product:
+tasks, attachments, tags, repeats, backups. Only part of that has been written,
+and the README is honest about it. The "have / not yet" table describes what was
+written, not what the schema can hold.
+
+The schema carried folders too. They were removed outright in
+`0002_drop_folders.sql`, because tags do the same job in one way instead of two.
+That is a rare and correct move: deleting half of a data model once it becomes
+clear it duplicates the other half.
+
+## Voice notes
+
+A microphone button in the library, plus a "Dictate" shortcut on a long press of
+the app icon. Say "meeting, 15:00" and you get a note called "Meeting" and a
+reminder at 14:30. The half-hour lead time is configurable.
+
+The phrase parser lives in `src-tauri/src/domain/quick_notes/phrase.rs` and
+understands far more than digits: numbers spelled as words, "half past two",
+"quarter to six", "noon", parts of the day that pin down which half of the day is
+meant, and relative days like "tomorrow" or "on Friday".
+
+Recognition uses the device's own offline model through `SpeechRecognizer`.
+Nothing leaves the phone.
+
+## What already works
+
+Notes with rich text, templates and colour gradients. A bin with restore.
+Full-text search on FTS5 with query history. Checklists where tasks are rows
+rather than tick boxes inside text. Tags with a filter in the library. Backup to
+a file and restore from it. Eight interface languages, among them Tatar, Bashkir,
+Crimean Tatar and Kazakh.
+
+A note can carry several reminders, with sound and time templates. Repeats:
+daily, on weekdays, weekly, monthly, yearly. The notification shade carries two
+buttons, "Done" and "Snooze".
+
+One detail worth stealing: "Done" dismisses the notification and nothing else. A
+repeat is a series, and one fired occurrence says nothing about the next one.
+
+Another: when the snooze interval is changed in settings, alarms that are already
+scheduled get re-armed. The interval travels inside the alarm itself, because the
+notification is shown by a receiver that may run with a dead app process.
+
+What is missing: attachments and voice notes as files, database encryption, and
+priorities and due dates on tasks.
+
+## Privacy
+
+There is no network code. The CSP in `tauri.conf.json` forbids any external
+source (`default-src 'self'`), and the Tauri permission list in
+`src-tauri/capabilities/default.json` is deliberately minimal.
+
+## Building and checking
+
+```bash
+bun install
+bun run dev                  # Vite only, in the browser, without Rust commands
+bun run android:dev          # on a connected device with HMR
+bun run android:build        # release APK for arm64
+```
+
+The full check before calling a stage done is nine commands in a row: strict
+TypeScript, a frontend build, `cargo fmt --check`, clippy with `-D warnings`,
+core tests plus separate tests for each of the three plugins, vitest, and the
+Kotlin tests.
+
+CI runs everything that can be checked without a device on every push. Kotlin
+tests are excluded: the plugin module builds against `.tauri/tauri-api`, which is
+generated by a Tauri build and absent in a clean clone. They run locally after at
+least one Android build.
+
+## Versions and releases
+
+The version is the same in three places: `package.json`,
+`src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`. Every release has a git
+tag `vX.Y.Z`, an entry in `CHANGELOG.md` in Keep a Changelog format, and a signed
+APK in Releases.
+
+All releases share one signature, so an update installs over the previous build
+and the data survives.
+
+<ProjectLink
+	href="https://github.com/proxima812/notes-android/releases/latest"
+	title="Latest release"
+	description="A ready APK: download, open on the phone, allow the install."
+/>

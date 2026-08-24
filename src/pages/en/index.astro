@@ -1,5 +1,6 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
+import PostGrid from "@/components/blog/PostGrid.astro";
+import Hero from "@/components/home/Hero.astro";
 import { buildAlternates, useTranslations } from "@/i18n";
 import Layout from "@/layouts/Layout.astro";
 
@@ -14,21 +15,7 @@ const t = useTranslations("en");
 	alternates={buildAlternates(Astro.url.pathname)}
 	markdownURL="/en.md"
 >
-	<h1 class="text-4xl font-bold text-balance">{t("home.heading")}</h1>
+	<Hero locale="en" />
 
-	<p class="text-muted-foreground">
-		{t("home.leadBefore")}
-		<code class="rounded bg-muted px-1.5 py-0.5 text-foreground"
-			>main.config.ts</code
-		>{t("home.leadAfter")}
-	</p>
-
-	<p>
-		<a
-			class="underline underline-offset-4"
-			href={getRelativeLocaleUrl("ru", "")}
-		>
-			{t("home.switcher")}
-		</a>
-	</p>
+	<PostGrid locale="en" limit={3} />
 </Layout>

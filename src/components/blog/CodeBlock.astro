@@ -1,0 +1,146 @@
+---
+/**
+ * Замена тега `pre` в контенте поста (`<Content components={{ pre }} />`).
+ * Шапка с языком и кнопками рендерится на сборке - скрипту в `PostArticle`
+ * остается только поведение, а не построение DOM.
+ */
+import { getLocaleFromUrl, useTranslations } from "@/i18n";
+
+const { "data-language": language, ...rest } = Astro.props;
+
+const t = useTranslations(getLocaleFromUrl(Astro.url));
+
+const LANGUAGE_NAMES: Record<string, string> = {
+	ts: "TypeScript",
+	tsx: "TypeScript",
+	js: "JavaScript",
+	jsx: "JavaScript",
+	json: "JSON",
+	bash: "Bash",
+	sh: "Shell",
+	css: "CSS",
+	html: "HTML",
+	md: "Markdown",
+	yaml: "YAML",
+	yml: "YAML",
+	py: "Python",
+	python: "Python",
+};
+
+const languageLabel =
+	typeof language === "string"
+		? (LANGUAGE_NAMES[language] ?? language.toUpperCase())
+		: "";
+
+/** `target` читает скрипт: `browser` - Blob в новой вкладке, остальные - сервисы. */
+const OPEN_ITEMS = [
+	{ target: "browser", label: t("article.code.openInBrowser"), domain: null },
+	{ target: "chatgpt", label: "ChatGPT", domain: "chatgpt.com" },
+	{ target: "claude", label: "Claude", domain: "claude.ai" },
+	{ target: "claude-code", label: "Claude Code", domain: "claude.ai" },
+	{ target: "t3chat", label: "T3 Chat", domain: "t3.chat" },
+	{ target: "gemini", label: "Gemini", domain: "gemini.google.com" },
+	{ target: "perplexity", label: "Perplexity", domain: "www.perplexity.ai" },
+];
+
+const faviconFor = (domain: string) =>
+	`https://www.google.com/s2/favicons?sz=32&domain=${domain}`;
+---
+
+<div class="code-block">
+	<div class="code-block-header">
+		<span class="code-block-lang">{languageLabel}</span>
+
+		<div class="code-block-actions">
+			<button type="button" class="code-block-copy">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					width="14"
+					height="14"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<rect x="9" y="9" width="13" height="13" rx="2"></rect>
+					<path
+						d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+					></path>
+				</svg>
+				<span>{t("article.code.copy")}</span>
+			</button>
+
+			<div class="code-block-open">
+				<button
+					type="button"
+					class="code-block-open-trigger"
+					aria-haspopup="true"
+					aria-expanded="false"
+				>
+					<span>{t("article.code.open")}</span>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						width="12"
+						height="12"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="m6 9 6 6 6-6"></path>
+					</svg>
+				</button>
+
+				<ul class="code-block-open-menu" hidden>
+					{OPEN_ITEMS.map((item) => (
+						<li>
+							<button
+								type="button"
+								class="code-block-open-item"
+								data-target={item.target}
+							>
+								{item.domain ? (
+									<img
+										src={faviconFor(item.domain)}
+										alt=""
+										width="16"
+										height="16"
+										loading="lazy"
+										class="code-block-icon"
+									/>
+								) : (
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										viewBox="0 0 24 24"
+										width="16"
+										height="16"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<rect x="3" y="4" width="18" height="16" rx="2"></rect>
+										<path d="M3 9h18"></path>
+									</svg>
+								)}
+								<span>{item.label}</span>
+							</button>
+						</li>
+					))}
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div class="code-block-body">
+		<pre {...rest} data-language={language}><slot /></pre>
+	</div>
+</div>

@@ -27,6 +27,7 @@ const pngTargets = [
 	{ size: 16, filename: "favicon-16x16.png" },
 	{ size: 32, filename: "favicon-32x32.png" },
 	{ size: 180, filename: "apple-touch-icon.png" },
+	{ size: 512, filename: "512x512.png" },
 	{ size: 48, filename: "favicon-48x48.png", internalOnly: true },
 ];
 

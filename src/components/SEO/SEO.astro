@@ -98,12 +98,20 @@ const socialImageURL = new URL(
 
 const siteName = name || config.site.og.siteName || config.site.og.title;
 
-const mainTitle =
-	title && config.site.og.title && title !== config.site.og.title
-		? `${title} ${config.site.og.titleSeparator} ${config.site.og.title}`
-		: title || config.site.og.title;
+const brand = config.site.og.title;
 
-const mainDescription = description || config.site.og.description;
+const mainTitle =
+	title && brand && title !== brand
+		? `${brand} ${config.site.og.titleSeparator} ${title}`
+		: title || brand;
+
+const rawDescription = (description || config.site.og.description).trim();
+
+const mainDescription = brand
+	? /[.!?…]$/.test(rawDescription)
+		? `${rawDescription} ${brand}`
+		: `${rawDescription}. ${brand}`
+	: rawDescription;
 
 const mainAuthor = author || config.site.og.author || siteName;
 const mainOGImage = socialImageURL || config.site.og.defaultImage;
@@ -241,6 +249,7 @@ const enabledVerifications = config.site.verifications.filter(
 <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
 <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+<link rel="icon" href="/512x512.png" type="image/png" sizes="512x512">
 
 {config.features.manifest && <link rel="manifest" href="/site.webmanifest" />}
 

@@ -1,0 +1,22 @@
+---
+import PostCard from "@/components/blog/PostCard.astro";
+import type { LocaleCode } from "@/config/types";
+import { getPosts } from "@/utils/blog";
+
+export interface Props {
+	locale: LocaleCode;
+	/** Ограничить количество постов (последние по дате). Без лимита - все посты. */
+	limit?: number;
+}
+
+const { locale, limit } = Astro.props;
+
+const sortedPosts = await getPosts(locale);
+const posts = limit ? sortedPosts.slice(0, limit) : sortedPosts;
+---
+
+{posts.length > 0 && (
+	<div class="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+		{posts.map((post) => <PostCard post={post} locale={locale} />)}
+	</div>
+)}

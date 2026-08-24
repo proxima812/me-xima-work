@@ -1,0 +1,396 @@
+---
+import { Image } from "astro:assets";
+import { type CollectionEntry, render } from "astro:content";
+import CodeBlock from "@/components/blog/CodeBlock.astro";
+import PostLink from "@/components/blog/PostLink.astro";
+import PostTable from "@/components/blog/PostTable.astro";
+import BackLink from "@/components/ui/BackLink.astro";
+import PageTitle from "@/components/ui/PageTitle.astro";
+import type { LocaleCode } from "@/config/types";
+import { useTranslations } from "@/i18n";
+
+export interface Props {
+	post: CollectionEntry<"blog">;
+	locale: LocaleCode;
+}
+
+const { post, locale } = Astro.props;
+const { title, category, pubDate, cover, coverAlt } = post.data;
+const { Content } = await render(post);
+const t = useTranslations(locale);
+
+const formattedDate = new Intl.DateTimeFormat(locale, {
+	dateStyle: "long",
+}).format(pubDate);
+
+const wordCount = (post.body ?? "").trim().split(/\s+/).filter(Boolean).length;
+const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
+/** Абсолютный адрес поста - уходит в промт для ИИ-сервисов. */
+const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+---
+
+<article class="flex w-full flex-col gap-8 select-text">
+	<div class="flex flex-col gap-4">
+		<BackLink locale={locale} />
+
+		<p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+			<span>{category}</span>
+			<span aria-hidden="true">&middot;</span>
+			<time datetime={pubDate.toISOString()}>{formattedDate}</time>
+			<span aria-hidden="true">&middot;</span>
+			<span>{readingMinutes} {t("article.readingTime")}</span>
+		</p>
+
+		<PageTitle>{title}</PageTitle>
+	</div>
+
+	<Image
+		src={cover}
+		alt={coverAlt}
+		class="wide-breakout aspect-video rounded-lg object-cover"
+	/>
+
+	<div class="post-content flex flex-col gap-6">
+		<Content components={{ a: PostLink, pre: CodeBlock, table: PostTable }} />
+	</div>
+</article>
+
+<style>
+@reference "@/styles/tailwind.css";
+
+/*
+ * Стили тегов контента - здесь, а не через `prose` из typography-плагина:
+ * шкала и цвета берутся из тех же токенов, что и остальной сайт.
+ * Компонентами подменяется только `a` (см. `PostLink.astro`) - остальным
+ * тегам компонент-обертка ничего не добавляет.
+ */
+.post-content :global(h2) {
+	@apply text-3xl font-bold tracking-tight text-balance;
+}
+
+.post-content :global(h3) {
+	@apply text-2xl font-bold tracking-tight text-balance;
+}
+
+.post-content :global(h4) {
+	@apply text-lg font-semibold tracking-tight text-balance;
+}
+
+.post-content :global(h5) {
+	@apply text-lg font-semibold text-balance;
+}
+
+.post-content :global(h6) {
+	@apply text-base font-semibold tracking-wide text-muted-foreground uppercase;
+}
+
+/* Всегда крупный, "prose-lg" масштаб текста поста. */
+.post-content :global(p) {
+	@apply text-lg leading-relaxed;
+}
+
+.post-content :global(a) {
+	@apply font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground;
+}
+
+/*
+ * Favicon перед ссылкой. Сам `a` остается инлайновым (не inline-flex),
+ * иначе длинная ссылка перестает переноситься по строкам.
+ */
+.post-content :global(img.post-link-favicon) {
+	@apply inline-block h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain align-text-bottom;
+	margin-inline: 0 0.25rem;
+}
+
+.post-content :global(blockquote) {
+	@apply flex flex-col gap-2 border-l-2 border-border py-0.5 pl-5 text-muted-foreground italic;
+}
+
+/*
+ * На широком экране отступа нет: текст пунктов идет вровень с абзацами, а
+ * маркеры выносятся наружу (`list-outside` - дефолт) в поля контейнера.
+ * На мобильном поле всего 20px, и вынесенный маркер упирается в край экрана -
+ * поэтому там список получает собственный отступ.
+ */
+.post-content :global(ul) {
+	@apply list-disc space-y-1.5 ps-6 marker:text-muted-foreground sm:ps-0;
+}
+
+.post-content :global(ol) {
+	@apply list-decimal space-y-1.5 ps-6 marker:text-muted-foreground sm:ps-0;
+}
+
+.post-content :global(li) {
+	@apply text-lg leading-relaxed;
+}
+
+.post-content :global(code) {
+	@apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.875em] text-foreground;
+}
+
+/*
+ * Обертка вокруг pre - рисуется скриптом ниже (шапка с языком/кнопками).
+ * overflow-hidden - только на .code-block-body (вокруг pre), а не на всем
+ * .code-block: иначе он обрезает выпадающее меню «Открыть», которое торчит
+ * за пределы блока кода на коротких сниппетах.
+ */
+.post-content :global(.code-block) {
+	@apply rounded-lg border border-border;
+}
+
+.post-content :global(.code-block-header) {
+	@apply flex flex-wrap items-center justify-between gap-2 rounded-t-lg border-b border-border bg-muted px-4 py-2;
+}
+
+.post-content :global(.code-block-body) {
+	@apply overflow-hidden rounded-b-lg;
+}
+
+.post-content :global(.code-block-lang) {
+	@apply font-mono text-xs text-muted-foreground uppercase;
+}
+
+.post-content :global(.code-block-actions) {
+	@apply flex items-center gap-2;
+}
+
+.post-content :global(.code-block-copy),
+.post-content :global(.code-block-open-trigger) {
+	@apply inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted;
+}
+
+.post-content :global(.code-block-open) {
+	@apply relative;
+}
+
+.post-content :global(.code-block-open-menu) {
+	@apply absolute top-full right-0 z-10 mt-1 w-max min-w-48 list-none overflow-hidden rounded-md border border-border bg-background py-1 shadow-lg;
+}
+
+.post-content :global(.code-block-open-menu[hidden]) {
+	display: none;
+}
+
+.post-content :global(.code-block-open-item) {
+	@apply flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm whitespace-nowrap text-foreground transition-colors hover:bg-muted;
+}
+
+/* Иконка сервиса в пункте меню - как favicon у ProjectLink, без wide-breakout. */
+.post-content :global(img.code-block-icon) {
+	@apply h-4 w-4 max-w-4 shrink-0 rounded-sm border-0 object-contain;
+	margin-inline: 0;
+}
+
+/* Без JS падение только сюда: базовые отступы и рамка еще на голом <pre>. */
+.post-content :global(pre) {
+	@apply overflow-x-auto rounded-lg border border-border p-4;
+}
+
+.post-content :global(.code-block pre) {
+	@apply rounded-none border-0;
+}
+
+.post-content :global(pre code) {
+	@apply rounded-none border-0 bg-transparent p-0 font-mono;
+}
+
+.post-content :global(hr) {
+	@apply border-border;
+}
+
+/*
+ * Таблица выходит за колонку текста только с `sm`. На мобильном вынос дал бы
+ * ширину во весь вьюпорт, то есть рамку впритык к краям экрана; там таблица
+ * остается в колонке и прокручивается внутри себя.
+ */
+.post-content :global(.post-table) {
+	@apply overflow-x-auto rounded-lg border border-border sm:wide-breakout;
+}
+
+.post-content :global(table) {
+	@apply w-full border-collapse text-left text-sm;
+}
+
+.post-content :global(th) {
+	@apply border-b border-border bg-muted px-4 py-2.5 font-semibold text-foreground;
+}
+
+.post-content :global(td) {
+	@apply border-b border-border px-4 py-2.5 text-muted-foreground;
+}
+
+.post-content :global(img) {
+	@apply wide-breakout rounded-lg border border-border object-cover;
+}
+
+.post-content :global(figure) {
+	@apply flex flex-col gap-2;
+}
+
+.post-content :global(figcaption) {
+	@apply text-center text-sm text-balance text-muted-foreground;
+}
+
+/*
+ * Сетка иллюстраций. `wide-breakout` живет на самой сетке, поэтому у
+ * картинок внутри его нужно снять - иначе каждая из них уходит в ширину
+ * вьюпорта и сетка рассыпается.
+ */
+.post-content :global(.post-gallery) {
+	@apply wide-breakout grid gap-4;
+}
+
+.post-content :global(.post-gallery img) {
+	@apply aspect-video;
+	width: 100%;
+	max-width: 100%;
+	margin-inline: 0;
+}
+
+/* Favicon в ProjectLink - маленькая иконка, а не фото: без wide-breakout. */
+.post-content :global(img.project-favicon) {
+	@apply h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain;
+	margin-inline: 0;
+}
+</style>
+
+<script
+	is:inline
+	define:vars={{
+		copyLabel: t("article.code.copy"),
+		copiedLabel: t("article.code.copied"),
+		postTitle: title,
+		postUrl,
+	}}
+>
+/*
+ * Разметка блока кода приходит с сервера (`CodeBlock.astro`) - здесь только
+ * поведение: копирование и меню «Открыть».
+ */
+const ICONS = {
+	copy: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
+	check:
+		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>',
+};
+
+/*
+ * `prefill` - адрес, который принимает готовый промт параметром `q`.
+ * У Gemini и Claude Code такого параметра нет: туда открываем голую страницу,
+ * а промт кладем в буфер обмена.
+ */
+const OPEN_TARGETS = {
+	chatgpt: { url: "https://chatgpt.com/", prefill: "https://chatgpt.com/?q=" },
+	claude: { url: "https://claude.ai/new", prefill: "https://claude.ai/new?q=" },
+	"claude-code": { url: "https://claude.ai/code", prefill: null },
+	t3chat: { url: "https://t3.chat/", prefill: "https://t3.chat/new?q=" },
+	gemini: { url: "https://gemini.google.com/", prefill: null },
+	perplexity: {
+		url: "https://www.perplexity.ai/",
+		prefill: "https://www.perplexity.ai/search?q=",
+	},
+};
+
+/* Длинный `q` режется прокси и самими сервисами - тогда падаем на буфер. */
+const MAX_URL_LENGTH = 6000;
+
+/*
+ * Промт всегда на английском: он адресован ИИ-сервису, а не читателю.
+ * Внутри - ссылка на пост, его название и сам скопированный код.
+ */
+function buildPrompt(code, language) {
+	return [
+		`I'm reading the article "${postTitle}" at ${postUrl}.`,
+		"",
+		"Explain the code snippet below from that article: what it does, how it",
+		"works step by step, and anything worth watching out for.",
+		"",
+		`\`\`\`${language ?? ""}`,
+		code,
+		"```",
+	].join("\n");
+}
+
+function openInService(code, target, language) {
+	if (target === "browser") {
+		const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+		window.open(URL.createObjectURL(blob), "_blank", "noopener,noreferrer");
+		return;
+	}
+
+	const service = OPEN_TARGETS[target];
+	if (!service) return;
+
+	const prompt = buildPrompt(code, language);
+	const prefilled = service.prefill
+		? service.prefill + encodeURIComponent(prompt)
+		: null;
+	const href =
+		prefilled && prefilled.length <= MAX_URL_LENGTH ? prefilled : service.url;
+
+	// Буфер - запасной путь: если сервис проигнорировал `q`, промт под рукой.
+	navigator.clipboard
+		.writeText(prompt)
+		.catch(() => {})
+		.finally(() => {
+			window.open(href, "_blank", "noopener,noreferrer");
+		});
+}
+
+function closeAllMenus(except) {
+	document.querySelectorAll(".code-block-open-menu").forEach((menu) => {
+		if (menu === except) return;
+		menu.hidden = true;
+		menu.previousElementSibling?.setAttribute("aria-expanded", "false");
+	});
+}
+
+document.addEventListener("click", (event) => {
+	if (event.target.closest(".code-block-open")) return;
+	closeAllMenus();
+});
+
+document.addEventListener("keydown", (event) => {
+	if (event.key === "Escape") closeAllMenus();
+});
+
+document.querySelectorAll(".post-content .code-block").forEach((block) => {
+	const code = block.querySelector("pre code");
+	const codeText = () => code?.textContent ?? "";
+
+	const copyButton = block.querySelector(".code-block-copy");
+	copyButton?.addEventListener("click", () => {
+		navigator.clipboard
+			.writeText(codeText())
+			.then(() => {
+				copyButton.innerHTML = `${ICONS.check}<span>${copiedLabel}</span>`;
+				setTimeout(() => {
+					copyButton.innerHTML = `${ICONS.copy}<span>${copyLabel}</span>`;
+				}, 2000);
+			})
+			.catch(() => {});
+	});
+
+	const trigger = block.querySelector(".code-block-open-trigger");
+	const menu = block.querySelector(".code-block-open-menu");
+	if (!trigger || !menu) return;
+
+	trigger.addEventListener("click", (event) => {
+		event.stopPropagation();
+		const isHidden = menu.hidden;
+		closeAllMenus(isHidden ? menu : undefined);
+		menu.hidden = !isHidden;
+		trigger.setAttribute("aria-expanded", String(isHidden));
+	});
+
+	const language = block.querySelector("pre")?.dataset.language;
+
+	menu.querySelectorAll("[data-target]").forEach((button) => {
+		button.addEventListener("click", () => {
+			openInService(codeText(), button.dataset.target, language);
+			menu.hidden = true;
+			trigger.setAttribute("aria-expanded", "false");
+		});
+	});
+});
+</script>

@@ -16,8 +16,8 @@
  */
 @theme {
 	--font-sans:
-		ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-		"Segoe UI Symbol", "Noto Color Emoji";
+		var(--font-inter), ui-sans-serif, system-ui, sans-serif,
+		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
 	/* Страница */
 	--color-background: oklch(0.98 0 0);
@@ -31,7 +31,7 @@
 	--color-secondary: oklch(0.9 0 0);
 	--color-secondary-foreground: oklch(0.17 0 0);
 
-	/* Приглушённые поверхности: карточки, disabled, вторичный UI */
+	/* Приглушенные поверхности: карточки, disabled, вторичный UI */
 	--color-muted: oklch(0.92 0 0);
 	--color-muted-foreground: oklch(0.45 0 0);
 
@@ -41,11 +41,12 @@
 
 /*
  * Preflight Tailwind v4 уже делает reset (box-sizing, margin/padding, border,
- * text-size-adjust, font-family). Дублировать его не нужно — здесь только то,
+ * text-size-adjust, font-family). Дублировать его не нужно - здесь только то,
  * чего в Preflight нет.
  */
 @layer base {
 	html {
+		@apply motion-safe:scroll-smooth;
 		tab-size: 4;
 		-webkit-tap-highlight-color: transparent;
 	}
@@ -54,8 +55,36 @@
 	body {
 		@apply flex min-h-screen min-w-80 flex-col bg-background font-sans text-foreground antialiased md:subpixel-antialiased;
 	}
+
+	/*
+	 * Интерфейс не выделяется: заголовки, кнопки, мета-строки. Выделять имеет
+	 * смысл то, что читают и копируют, - и это включается точечно классом
+	 * `select-text`: тело статьи и строки на странице проектов.
+	 */
+	body {
+		@apply select-none;
+	}
+
+	/* Единый фокус для всего интерактива: ссылки, кнопки, поля. */
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-foreground;
+	}
 }
 
 @utility no-container {
 	@apply relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw];
+}
+
+/*
+ * Раскрывает элемент до max-w-5xl независимо от того, насколько узкий
+ * родитель (например max-w-4xl у страницы поста). В отличие от no-container
+ * не идет в 100vw всегда - на широких экранах упирается в 5xl и остается
+ * отцентрованным по вьюпорту.
+ */
+@utility wide-breakout {
+	/* Preflight ставит `img,video{max-width:100%}` - без сброса ширина ниже
+	   зажимается им обратно до 100% родителя. */
+	max-width: none;
+	width: min(100vw, var(--container-5xl));
+	margin-inline: calc((100% - min(100vw, var(--container-5xl))) / 2);
 }

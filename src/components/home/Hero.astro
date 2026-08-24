@@ -1,0 +1,61 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import Button from "@/components/ui/Button.astro";
+import PageTitle from "@/components/ui/PageTitle.astro";
+import type { LocaleCode } from "@/config/types";
+import { useTranslations } from "@/i18n";
+import { getPosts } from "@/utils/blog";
+
+export interface Props {
+	locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const otherLocale = locale === "ru" ? "en" : "ru";
+
+const [latestPost] = await getPosts(locale);
+const badgeText = latestPost?.data.title ?? "proxima812";
+---
+
+<div class="flex flex-col items-center gap-6 py-6 text-center">
+	<div class="flex flex-col items-center">
+		<img
+			src="/favicon.svg"
+			alt="xima.work"
+			width="80"
+			height="80"
+			class="drop-shadow-sm"
+		>
+
+		<div class="relative mt-3">
+			<span
+				aria-hidden="true"
+				class="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-primary"
+			></span>
+			<span
+				class="relative inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
+			>
+				{badgeText}
+			</span>
+		</div>
+	</div>
+
+	<PageTitle class="max-w-2xl">{t("home.heading")}</PageTitle>
+
+	<div class="flex flex-wrap items-center justify-center gap-3">
+		<Button href={getRelativeLocaleUrl(locale, "articles")}>
+			{t("home.cta.articles")}
+		</Button>
+		<Button href={getRelativeLocaleUrl(locale, "projects")} variant="secondary">
+			{t("home.cta.projects")}
+		</Button>
+	</div>
+
+	<a
+		href={getRelativeLocaleUrl(otherLocale, "")}
+		class="text-sm text-muted-foreground underline decoration-dashed underline-offset-4 transition-colors hover:text-foreground"
+	>
+		{t("home.switcher")}
+	</a>
+</div>

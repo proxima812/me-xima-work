@@ -1,0 +1,190 @@
+---
+title: "How xima.music is built"
+description: "An offline Android player: three layers with hard boundaries, Media3 in Kotlin, data in Rust, SolidJS on top, and the bugs that shaped it."
+category: "Engineering"
+pubDate: 2026-08-22
+cover: "../../../assets/blog/xima.music.png"
+coverAlt: "The xima.music logo: a white note on a dark blue background"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+xima.music is a personal music player for Android. Fully offline: no accounts, no
+servers, no network requests. The music sits in the phone's storage, not inside
+the APK.
+
+The central architectural decision is visible immediately: **there is not a
+single `<audio>` element on the web side**. Sound, notification, lock screen and
+Bluetooth are entirely on the Android side.
+
+<ProjectLink
+	href="https://github.com/proxima812/music.xima"
+	title="proxima812/music.xima"
+	description="The source: Tauri 2, Rust, Kotlin, SolidJS."
+/>
+
+## Three layers, hard boundaries
+
+```txt
+SolidJS UI
+    |  Tauri IPC (invoke / events)
+Rust Core  (domain / application / infrastructure)
+    |  tauri-plugin-player
+Kotlin / Android  (Media3, ExoPlayer, MediaSessionService)
+```
+
+| Layer | Technologies |
+| --- | --- |
+| Shell | Tauri 2 (Android) |
+| UI | SolidJS, strict TypeScript, Tailwind v4, HeroUI, Kobalte |
+| Core | Rust: domain, services, repositories |
+| Database | SQLite through `sqlx`, FTS5, versioned migrations |
+| Audio | Kotlin, Media3/ExoPlayer, `MediaSessionService` |
+
+Who owns what:
+
+- **Kotlin**, and only Kotlin, owns playback: play, pause, seek, next, prev,
+  shuffle, repeat, the player-level queue, the notification, audio focus.
+- **Rust** owns the data: library, playlists, history, statistics, search.
+- **Solid** owns presentation and local UI state only. The source of truth for
+  the current track and progress is the native player, which pushes events.
+
+Explicitly forbidden: `<audio>`, `HTMLAudioElement` and the Web Audio API for
+library playback; SQL queries straight from the frontend; keeping the library in
+the Tauri Store; putting mp3 files into the APK assets.
+
+In numbers the layers look like this: 64 Rust files, 60 Solid components, and 15
+Kotlin files in a separate `tauri-plugin-player`.
+
+## What it does
+
+The library is built from the shared media store (MediaStore) and your own
+folders (SAF): songs, albums, artists, genres, folders, 11 sort orders,
+virtualised lists. A queue with "play next", reordering and restoration after a
+restart.
+
+Smart playlists are the most interesting part: the rules are stored as data and
+compiled into SQL. 11 rule types, 7 presets out of the box. Search through SQLite
+FTS5, listening history, counters, favourites.
+
+One detail: when an album has no artwork, a deterministic glow gradient is
+drawn - the same one every time for the same album. The palette comes from
+[color.xima.work](https://color.xima.work/collection/glow/).
+
+The theme is dark only. Statistics, Android Auto, a sleep timer, an equaliser and
+lyrics are deliberately absent.
+
+## The bugs that built this project
+
+The repository carries `docs/BUGS.md`, split into three parts: fixed, open, and
+**unchecked**, meaning places where nobody has looked for bugs yet. That third
+category is rare, and there is more honesty in it than in the first two.
+
+### The app would not start, and every check was green
+
+The `run()` function in `src-tauri/src/lib.rs` was not marked
+`#[cfg_attr(mobile, tauri::mobile_entry_point)]`. On Android the app starts from
+the JVM rather than from `main`, and without that macro the `.so` has no JNI
+entry point for `MainActivity` to load.
+
+The trap is that `cargo check`, `cargo test` and `cargo clippy` all passed
+completely green, and the library built for `aarch64-linux-android` without a
+single warning. The error only appeared while packaging the APK.
+
+### A one-line comment ate half a file
+
+The Kotlin line looked harmless:
+
+```kotlin
+/** `audio/*`, but not music: playlists. */
+```
+
+**Block comments in Kotlin nest.** The `/*` sequence inside the text opened a
+nested comment, the closing `*/` closed only that one, and the outer comment
+stayed open to the end of the file, swallowing two functions and three constants.
+The result: 7 "unresolved reference" errors across three different files from one
+typo.
+
+Backticks do not save you, the lexer does not look at them. There is one cure:
+never write the `/` and `*` pair inside a block comment. Checking the balance
+across every Kotlin file takes one line of awk.
+
+### Cyrillic in the project path
+
+The project lived in a folder with a Russian name, and that produced three
+different symptoms of one cause. The Tauri CLI panicked while reading its own
+path: Cyrillic arrived in Rust as invalid UTF-8 and `current_exe().unwrap()`
+panicked. `tauri android init` could not work out its own path and wrote
+`node tauri` into a Gradle task instead of an absolute path. Exporting `LANG` and
+`LC_ALL` **does not help**: the corruption happens in the Node to Rust bridge
+inside the CLI, not in the shell.
+
+The current workaround is a symlink with a Latin name that all commands run from.
+A workaround, not a fix.
+
+### A Kotlin version conflict
+
+The generated Tauri Android project pins the Kotlin Gradle plugin to 1.9.25,
+while `kotlinx-coroutines-android` pulls `kotlin-stdlib` up to 2.2.10. The 1.9
+compiler cannot read 2.2 metadata, so `trim`, `takeIf`, `emptyList` and `let` -
+the whole stdlib - came back as "not found".
+
+### A folder that overwrites itself
+
+`src-tauri/gen/android/` is in `.gitignore` and gets overwritten by every
+`tauri android init`. It also holds two edits without which the build does not
+pass. So after any regeneration the build breaks in two different ways, and both
+look like mysterious Kotlin errors.
+
+For the same reason APK signing is a separate step rather than a Gradle
+`signingConfig`: the config would have to live in the folder that gets
+overwritten.
+
+## About the signing key
+
+The most expensive line in the project's documentation: the keystore and its
+password never enter the repository and cannot be recovered. Lose the password
+and there is no way to update an installed app. A new key means a new signature,
+it will not install over the old build, and users have to delete the app along
+with their playlists and history.
+
+That already happened between versions 1.0.1 and 1.1.0.
+
+## Building
+
+You need Node 22+, Rust with the `aarch64-linux-android` target, the Android SDK,
+NDK 27 and JDK 21.
+
+```bash
+npm install
+npm run typecheck                 # tsc --noEmit
+npm run rust:test                 # core tests
+npm run rust:lint                 # clippy -D warnings
+npm run android:dev               # dev build with hot reload on a device
+npm run android:build -- --apk    # release, all ABIs, unsigned
+npm run release:sign              # align, sign, verify
+```
+
+The app icon is generated from a single `xima.music.png` in the root, everything
+else is derived. After generating it, the adaptive icon background has to be put
+back by hand: the Tauri template writes white there.
+
+## Documentation as part of the project
+
+| File | About |
+| --- | --- |
+| `AGENTS.md` | how to write code in this project |
+| `docs/CONTRACTS.md` | types, commands, events, DB schema - the source of truth |
+| `docs/FEATURES.md` | what is implemented and at what status |
+| `docs/BUGS.md` | fixed, open and unchecked |
+| `docs/PROPOSALS.md` | what to do next |
+
+Splitting "contracts" from "features" is not a formality here. Contracts are what
+the three layers agreed on between themselves, and no single layer gets to change
+them quietly.
+
+<ProjectLink
+	href="https://github.com/proxima812/music.xima/releases"
+	title="xima.music releases"
+	description="One APK for every architecture: arm64, arm32, x86, x86_64."
+/>

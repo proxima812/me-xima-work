@@ -1,8 +1,8 @@
 /**
  * Минимальный i18n-слой стартера: список локалей приходит из `main.config.ts`,
- * словари — из `src/i18n/locales/*.ts`. В отличие от проектов с частичным
+ * словари - из `src/i18n/locales/*.ts`. В отличие от проектов с частичным
  * переводом контента, здесь предполагается, что каждая локаль покрывает все
- * маршруты — иначе `useTranslations` тихо покажет ключ вместо текста.
+ * маршруты - иначе `useTranslations` тихо покажет ключ вместо текста.
  */
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { config } from "main.config";
@@ -36,27 +36,38 @@ export function useTranslations(locale: LocaleCode) {
 
 /**
  * hreflang-альтернативы для `<SEO alternates>`: по одной ссылке на каждую
- * локаль плюс `x-default` на дефолтную. `pathname` — без учёта текущей
+ * локаль плюс `x-default` на дефолтную. `pathname` - без учета текущей
  * локали в префиксе (например `/about`, а не `/en/about`).
+ *
+ * `availableLocales` сужает список, когда страница есть не во всех локалях
+ * (посты блога переведены не все). hreflang обязан вести на существующую
+ * страницу - иначе поисковик получает ссылку на 404.
  */
 export function buildAlternates(
 	pathname: string,
+	availableLocales: readonly LocaleCode[] = locales,
 ): Array<{ hreflang: string; href: string }> {
 	const segments = pathname.split("/").filter(Boolean);
 	const relativePath = isLocale(segments[0])
 		? segments.slice(1).join("/")
 		: segments.join("/");
 
-	const links = locales.map((locale) => ({
+	const links = availableLocales.map((locale) => ({
 		hreflang: locale,
 		href: getRelativeLocaleUrl(locale, relativePath),
 	}));
+
+	const fallback = availableLocales.includes(defaultLocale)
+		? defaultLocale
+		: availableLocales[0];
+
+	if (!fallback) return links;
 
 	return [
 		...links,
 		{
 			hreflang: "x-default",
-			href: getRelativeLocaleUrl(defaultLocale, relativePath),
+			href: getRelativeLocaleUrl(fallback, relativePath),
 		},
 	];
 }

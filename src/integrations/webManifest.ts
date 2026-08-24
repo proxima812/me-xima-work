@@ -34,6 +34,12 @@ export function renderWebManifest(options: WebManifestOptions): string {
 					type: "image/png",
 					purpose: "maskable",
 				},
+				{
+					src: "/512x512.png",
+					sizes: "512x512",
+					type: "image/png",
+					purpose: "any",
+				},
 			],
 		},
 		null,

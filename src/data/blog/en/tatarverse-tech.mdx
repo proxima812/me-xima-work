@@ -1,0 +1,354 @@
+---
+title: "How tatarverse.cc is built"
+description: "A look inside: the stack, MDX content, a design system across seven accents, client scripts, hooks, the agent layer and real bugs."
+category: "Engineering"
+pubDate: 2026-08-24
+cover: "../../../assets/blog/1.png"
+coverAlt: "The tatarverse logo: a tulip in a rounded square"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+tatarverse.cc is a catalogue of Tatar, Bashkir and Crimean Tatar centres,
+communities and initiatives: 420 entries across 53 countries. The code is fully
+open, design system and AI agent instructions included. Here is what it is made
+of, where the traps were, and where to start if you want to help.
+
+<ProjectLink
+	href="https://github.com/proxima812/tatarverse"
+	title="proxima812/tatarverse"
+	description="The source: Astro 7, MDX, Tailwind v4, Cloudflare Pages."
+/>
+
+## Why static
+
+The catalogue has no accounts, no cart and no feed. It has data that changes
+rarely and pages that must be served fast worldwide. No server needed:
+`output: "static"` turns the whole site into HTML files served from a CDN.
+
+A separate decision: **no UI frameworks**. No React, no Vue, no Svelte, no
+animation library. Astro components and CSS keyframes only. In numbers that is
+54 components and 19 pages, with not a single hydration island.
+
+```json
+{
+	"astro": "7.0.3",
+	"@astrojs/mdx": "7.0.0",
+	"tailwindcss": "^4.0.9",
+	"fuse.js": "^7.3.0",
+	"wrangler": "^4.92.0"
+}
+```
+
+On top: `@astrojs/sitemap`, `@astrojs/rss`, `astro-icon`, `@dualmark/astro` for
+markdown twins of pages, and `@vite-pwa/astro`. Bun as the package manager,
+Cloudflare Pages via Wrangler for deployment.
+
+## Content: four collections, strict schemas
+
+Not a single database. Everything is files, described in `src/content.config.ts`:
+
+| Collection | Folder | What is inside |
+| --- | --- | --- |
+| `centers` | `src/data/centers_formatted` | 420 Russian entries |
+| `centersEn` | `src/data/centers_i18n/en` | 363 English translations |
+| `posts` | `src/data/posts` | editorial notes |
+| `thanks` | `src/data/thanks` | contributor credits |
+
+Every schema is `.strict()`. An unknown frontmatter field is not ignored, it
+fails the build. That strictness is deliberate: data comes from many different
+people, and a silently swallowed typo in a field name is worse than a red build.
+
+Geography is **not** part of the schema. `src/data/geo` (`ruRegions`,
+`macroRegions`, `places`) normalises `location` at render time for facets,
+search and cards. The country flag is not written into MDX by hand either: it is
+derived from the country name through `countryFlagsByRu` in
+`src/data/worldCountries.ts`.
+
+Entry slugs are stable, shaped like `tbk-389`. They cannot be changed: links
+already circulating in chats and on centre websites depend on them.
+
+## The design system: two files that must agree
+
+The design system lives in `DESIGN.md`, 566 lines of reasoning about why things
+are the way they are. Next to it sits the machine sidecar
+`.impeccable/design.json`. The rule is hard: change one, change the other.
+
+Single sources of truth: accents in `src/utils/accents.ts`, palettes in
+`src/styles/palettes/*.css`, tokens in `src/styles/tailwind.css`. No literal hex
+values and no raw Tailwind palettes in components, semantic tokens only.
+
+### The surface ladder
+
+The load-bearing rule of the whole system: `muted` sits between `background` and
+`surface`.
+
+```txt
+dark:   background < muted < surface < surface-muted < subtle
+light:  surface > background > surface-muted > muted > subtle
+```
+
+A section band takes `bg-muted` and is recessed relative to the page; a card on
+that band takes `bg-surface` and is raised above it. Swap the two and the
+catalogue collapses.
+
+That is exactly what used to happen. In dark, `muted` sat **above** `surface`,
+and at three presets they landed on the same value: `orange` 20%/20%, `pink`
+15%/15%, `red` 13%/12%. Several hundred cards rendered in the same colour as the
+band behind them. In light, `surface` and `background` were both pure white, so
+every `bg-surface` panel was white on white.
+
+### Derived tokens
+
+Four tokens are not authored per palette. They are computed from their own
+backing surface:
+
+| token | formula |
+| --- | --- |
+| `surface-muted` | `color-mix(in oklab, surface 94.5%, surface-foreground)` |
+| `border-muted` | `color-mix(in oklab, surface 86%, surface-foreground)` |
+| `border` | `color-mix(in oklab, surface 80%, surface-foreground)` |
+| `depth-100` | `color-mix(in oklab, surface 84%, surface-foreground)` |
+
+The point is not fewer lines. A hand-written border can drift, and did:
+`border-muted` measured `1.10:1` against `surface` under the `red` and `pink`
+accents, meaning it was invisible. A derived value cannot fail that way. It is
+always a fixed perceptual distance from its own surface.
+
+Meanwhile `muted`, `subtle` and the two ink tokens stay authored per palette. A
+single global proportion would flatten the presets into each other.
+
+### Radius rides the accent
+
+Radius is part of the preset, not a constant. Six presets map onto **three**
+shape registers: six different geometries would turn the scale into a set of
+accidents.
+
+| register | presets | micro | control | card | catalog |
+| --- | --- | --- | --- | --- | --- |
+| default | `green`, `orange` | 8 | 16 | 24 | 32 |
+| medium | `violet`, `pink` | 8 | 12 | 18 | 24 |
+| small | `blue`, `red` | 6 | 8 | 12 | 16 |
+
+`red` joins the small register on purpose: it is the loudest accent in the set,
+and the strict shape balances it. The steps compress non-uniformly, because
+large radii can give up proportionally more, while a flat multiplier would push
+`micro` down to 4px and make it indistinguishable from a square corner.
+
+The print view of the catalogue (`/centers/print`) keeps raw radii: paper should
+not shift with a screen preset.
+
+### Lift
+
+Two utilities instead of hand-written `dark:shadow-*` pairs:
+
+- `surface-lift` for things in the flow: cards, feature sections. A soft shadow
+  in light and **no shadow at all in dark**, where the lightness step already
+  separates the layers.
+- `overlay-lift` for things floating over the page: menus, popovers. In dark, a
+  `1px` inset highlight along the top edge instead of a shadow from below.
+
+A black shadow on a near-black page draws nothing and still costs compositing.
+
+## Surfaces a change must survive
+
+A change is not done until it survives every surface it touches. A single
+catalogue card lives under all of these at once:
+
+| surface | what to check |
+| --- | --- |
+| Accent | 7 presets via `[data-accent]`: `default` (monochrome), `green`, `blue`, `violet`, `red`, `orange`, `pink` |
+| Theme | light, dark, system, contrast holds in both |
+| Motion | `[data-motion="off"]` and `prefers-reduced-motion` |
+| Locale | `ru` unprefixed, `en` under `/en/` |
+| Print | `/centers/print` with its own layout |
+| Filters | the toolbar reads `data-*` straight off the DOM |
+
+"It builds" does not count as a check.
+
+## Client scripts
+
+There is not much JS on the site, and all of it is about the interface rather
+than the data.
+
+**`centersToolbar.ts`** is the catalogue engine: search, facets, active filters.
+Filter axes are not hardcoded. A group declares itself with `data-filter-group`
+and the set of axes is read from the markup. Previously each group name was
+written into the state type, into the query parameter map and into four branches
+of the filter logic, so adding a fifth axis meant editing eight places.
+
+Three things the filter hierarchy did not work without:
+
+1. Live counts. They used to arrive from the server once, so after picking
+   "Kazakhstan" the number 17 was still hanging next to "Perm Krai".
+2. Zero options hide themselves. That also reconciles the levels: pick Ukraine
+   and regions and cities of other countries drop to zero and disappear.
+3. Sections appear conditionally (`data-filter-gate`). City is not shown until a
+   country or region is picked, otherwise it is a list of 122 rows.
+
+**`savedCenters.ts`** handles saved cards. There is no server and never will be,
+so the list lives in localStorage. It stores not just an id but a snapshot of the
+card: `/saved` renders straight from storage with no request to the catalogue.
+The snapshot is read from `data` attributes the card already carries, so the same
+strings are not duplicated in the markup.
+
+**`appearance.ts`** handles theme and accent. The first application happens in an
+inline script in `<head>`, before first paint, otherwise you get a flash of the
+light theme. Listeners are attached to `document`, so the number of switches on
+the page does not matter.
+
+## Project scripts
+
+```bash
+bun run dev
+bun run build
+bun run cf:preview     # run the built dist through Cloudflare locally
+bun run cf:deploy      # build and publish
+bun run release:bump   # version in package.json and src/data/release.json
+bun run brand-kit      # a PDF with every preset
+```
+
+`release:bump` is the only way to change the version; `package.json` and
+`src/data/release.json` are never edited by hand. A `pre-push` git hook sits on
+top: it checks that the push carries new commits and the tree is clean, bumps the
+version, commits, and then **aborts the current push** so the release commit goes
+out with the next one. Forks do not need it: `RELEASE_BUMP_SKIP=1 git push`.
+
+`brand-kit` builds one HTML page with all seven presets in both themes and prints
+it to PDF through headless Chrome. It duplicates no values: it reads
+`tailwind.css` and `palettes/*.css` and rewrites the selectors so fourteen states
+can coexist on one page. A copy of the palette inside the generator would mean
+the brand kit diverges from the site the day someone edits a token.
+
+## Markdown twins and Cloudflare
+
+The site is static, so the `@dualmark/astro` endpoints never reach production:
+only the body of the `.md` file lands on disk. Headers computed per request, and
+content negotiation by `Accept` or `User-Agent`, cannot be expressed in a static
+`_headers` file.
+
+Hence the Cloudflare Pages function in `functions/_middleware.js`: it detects AI
+bots, negotiates the format and serves the markdown twin instead of HTML. The
+logic is deliberately conservative. If a page has no twin, it serves normal HTML
+rather than a 404.
+
+## The agent layer
+
+The project is openly set up for work with AI agents, and that layer is in git
+too.
+
+`.agents/skills/` holds **13 skills**. Eight are the project's own, prefixed
+`tatarverse-`: `astro-content`, `posts`, `ui-tailwind`, `brand`, `motion`,
+`i18n`, `page-weight`, `collab`. Five are third-party: `impeccable`,
+`design-taste-frontend`, `high-end-visual-design`, `redesign-existing-projects`,
+`full-output-enforcement`. The third-party ones are pinned in `skills-lock.json`
+and updated with `bunx skills add`, never by hand-editing `SKILL.md`.
+
+`.claude/skills/` symlinks to the same directories, so Codex and Claude see one
+identical set and there is one copy to maintain.
+
+There are three hooks:
+
+- `posts_style_check.py` runs on `PostToolUse` and, after every edit under
+  `src/data/posts`, reports style violations with line numbers.
+- The `impeccable` hook checks UI files after an edit and does a deep pass on
+  `Stop`.
+- `pre_tool_use_guard.py` and `session_start.py` guard the entry points.
+
+`AGENTS.md` fixes three hard bans for posts, and a machine checks them rather
+than memory: no long dashes, no Cyrillic "e" with two dots, and no spelling of
+the brand with a capital `V` in the middle. The correct form is `Tatarverse`, and
+lowercase `tatarverse` in the body of a post.
+
+Two more rules from the same file, both paid for in real damage:
+
+**Pick up the traces.** After deleting a file, an export, a route or a constant,
+`rg` its name across the whole repository, `.md` docs and skills included.
+Deleting the contrast-audit scripts left `DESIGN.md` pointing at them, and
+removing the map left `CONTRIBUTING` documenting `geo` fields that no longer
+existed.
+
+**`export *` does not bring a name into the re-exporting module's own scope.**
+Move a shared constant into a leaf module and the barrel that uses it now needs
+an explicit `import` too. `astro check` passes. The build is what fails.
+
+## Nuances and bugs
+
+The surface ladder inversion and the invisible border are above. Two more.
+
+**The motion toggle hangs components.** The switch in the header writes
+`data-motion="off"` on `<html>` and forces `animation: none` and
+`transition: none` on everything. Any component whose state machine waits on
+`animationend` or `transitionend` then hangs forever. Such places are carved out
+and given `animation-duration: 1ms` instead of `none`, because the event still
+has to fire. The mobile drawer is the precedent.
+
+**The locales diverge, and that is fine.** 420 Russian entries against 363
+English ones. Routes with no English version are listed in `ruOnlyRoutes` in
+`src/i18n/index.ts`, together with what the language switcher should do: `stay`
+or move to a `hub` page.
+
+## How to contribute
+
+The most valuable contribution is verified data, and it does **not require being
+a programmer**.
+
+**Path one, entirely in the browser.** No git, no terminal, no Node. Entries live
+in `src/data/centers_formatted/`, one file per centre. On GitHub, open the folder
+and press `t` to search by file name. If you only know the title, search the
+repository with `path:src/data`. Then hit the pencil, **Edit this file**, edit in
+the browser, and use the **Preview** tab to see the result. GitHub creates the
+fork for you.
+
+**Path two** is a fork and local development: for several centres at once,
+translations, and interface changes.
+
+Not sure the data is accurate? Open an issue with a link to the source anyway.
+
+### The entry schema
+
+Zod, `.strict()`, so an unknown field fails the build.
+
+| Field | Type | Required |
+| --- | --- | --- |
+| `title` | string | yes |
+| `type` | enum | no |
+| `category` | enum | no |
+| `source` | URL | no |
+| `summary` | string | no |
+| `pubDate` | string | no |
+| `location` | object (also `.strict()`) | no |
+
+Inside `location`: `country`, `region`, `city`, `flag`.
+
+### What breaks most often
+
+- **The build fails on the schema.** An unknown frontmatter field, or a
+  `category`/`type` value outside the enum.
+- **`source` fails validation.** It needs a full URL with a scheme:
+  `https://example.com/`, not `example.com`.
+- **Russian text on an English page.** The key exists in `ru.ts` but not in
+  `en.ts`, so the default-locale fallback kicked in.
+- **`bun install` fails.** Bun 1.3+ is required.
+- **`git push` rejected over a release commit.** That is the `pre-push` hook, and
+  a fork does not need it: `RELEASE_BUMP_SKIP=1 git push`.
+
+When adding an interface string: add the key to **every** active locale, use an
+existing namespace (`nav.*`, `list.*`, `detail.*`, `copy.*`, `feedback.*`), and
+leave no hardcoded text in components.
+
+## What to improve
+
+The most useful work right now is not refactoring but data: verified entry
+updates, English translations (57 entries behind), source references,
+accessibility fixes and small interface improvements that keep the existing
+visual language.
+
+The guides are in the repository in two languages: `CONTRIBUTING.ru.md` and
+`CONTRIBUTING.en.md`.
+
+<ProjectLink
+	href="https://tatarverse.cc"
+	title="tatarverse.cc"
+	description="The catalogue itself: 420 centres across 53 countries."
+/>

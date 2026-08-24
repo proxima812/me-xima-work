@@ -1,0 +1,20 @@
+---
+import { cn } from "@/utils/lib/cn";
+
+export interface Props {
+	/** Дополнительные классы: ширина, выравнивание. Размер и вес не менять. */
+	class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<!-- biome-ignore lint/a11y/useHeadingContent: содержимое приходит через <slot /> -->
+<h1
+	class={cn(
+		"text-4xl font-bold tracking-tight text-balance sm:text-5xl",
+		className,
+	)}
+>
+	<slot />
+</h1>

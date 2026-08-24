@@ -1,0 +1,29 @@
+---
+import { cn } from "@/utils/lib/cn";
+
+export interface Props {
+	href: string;
+	/** primary - основное действие, secondary - все остальное. */
+	variant?: "primary" | "secondary";
+	class?: string;
+}
+
+const { href, variant = "primary", class: className } = Astro.props;
+
+const VARIANTS = {
+	primary: "bg-primary text-primary-foreground",
+	secondary: "bg-secondary text-secondary-foreground",
+} as const;
+---
+
+<!-- biome-ignore lint/a11y/useAnchorContent: содержимое приходит через <slot /> -->
+<a
+	href={href}
+	class={cn(
+		"inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition hover:opacity-90",
+		VARIANTS[variant],
+		className,
+	)}
+>
+	<slot />
+</a>

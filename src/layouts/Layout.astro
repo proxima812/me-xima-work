@@ -1,4 +1,5 @@
 ---
+import { Font } from "astro:assets";
 import type { Props as ContainerProps } from "@/components/partials/Container.astro";
 import Container from "@/components/partials/Container.astro";
 import GoogleTagManager from "@/components/SEO/Analytics/GoogleTagManager.astro";
@@ -78,16 +79,17 @@ const containerAttrs = {
 } satisfies ContainerProps;
 ---
 
-<html lang={htmlLang} class="scroll-smooth subpixel-antialiased">
+<html lang={htmlLang}>
 	<head>
 		{config.site.analytics.googleTagManager.enabled && (
-				<GoogleTagManager gtmId={config.site.analytics.googleTagManager.id} />
-			)}
+			<GoogleTagManager gtmId={config.site.analytics.googleTagManager.id} />
+		)}
 
 		{config.site.analytics.yandexMetrika.enabled && (
-				<YandexMetrika counterId={config.site.analytics.yandexMetrika.id} />
-			)}
+			<YandexMetrika counterId={config.site.analytics.yandexMetrika.id} />
+		)}
 		<SEO {...seoProps} />
+		<Font cssVariable="--font-inter" preload />
 	</head>
 	<body>
 		<Container {...containerAttrs}>

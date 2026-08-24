@@ -2,11 +2,29 @@ import type { Dictionary } from "@/i18n/dictionary";
 
 export default {
 	"meta.title": "Главная",
-	"meta.description": "Стартовая страница проекта.",
-	"home.heading": "Главная",
-	"home.leadBefore": "Стартер готов к работе. Настройки проекта — в ",
-	"home.leadAfter": ".",
+	"meta.description":
+		"Личный блог: заметки, мысли и истории на русском и английском",
+
+	"home.heading": "У меня есть, что сказать",
 	"home.switcher": "English",
+	"home.cta.articles": "Статьи",
+	"home.cta.projects": "Проекты",
+
+	"nav.back": "На главную",
+
+	"articles.title": "Статьи",
+	"articles.description": "Все статьи блога - последние сверху.",
+
+	"article.readingTime": "мин чтения",
+	"article.code.copy": "Скопировать код",
+	"article.code.copied": "Скопировано",
+	"article.code.open": "Открыть",
+	"article.code.openInBrowser": "Открыть в браузере",
+
+	"projects.title": "Проекты",
+	"projects.description": "Ссылки на мои проекты.",
+	"projects.code": "код",
+
 	"notFound.title": "Ошибка 404 - такой страницы не существует",
 	"notFound.description":
 		"Страница не найдена. Возможно, она была удалена или перемещена.",

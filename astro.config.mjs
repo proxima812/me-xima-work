@@ -3,7 +3,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import dualmark from "@dualmark/astro";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "astro/config";
+import { defineConfig, fontProviders } from "astro/config";
 import icon from "astro-icon";
 import { config } from "./main.config";
 import { assertValidConfig } from "./src/config/validate";
@@ -74,6 +74,24 @@ export default defineConfig({
 	prefetch: {
 		defaultStrategy: "viewport",
 		prefetchAll: true,
+	},
+
+	fonts: [
+		{
+			name: "Inter",
+			cssVariable: "--font-inter",
+			provider: fontProviders.google(),
+			subsets: ["latin", "cyrillic"],
+			weights: [400, 500, 700],
+			styles: ["normal"],
+		},
+	],
+
+	// Светлая тема подсветки кода — сайт не поддерживает тёмный режим.
+	markdown: {
+		shikiConfig: {
+			theme: "github-light",
+		},
 	},
 
 	vite: {
