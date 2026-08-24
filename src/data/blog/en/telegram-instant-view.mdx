@@ -1,0 +1,209 @@
+---
+title: "Instant View: the article opens inside Telegram"
+description: "Why a reader wants an instant version of a post, how per-domain templates work, and three traps I walked into while writing one for this blog."
+category: "Engineering"
+pubDate: 2026-08-24T14:30:00+05:00
+cover: "../../../assets/blog/telegram-iv.png"
+coverAlt: "The Telegram Instant View logo: a robot husky in a hat holding an EXTRA newspaper"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+A reader in a channel sees a link to an article. What follows is the usual
+routine: a tap, Telegram opens its in-app browser, the browser pulls HTML, fonts,
+images and scripts, shows a cookie banner and jolts the header once the font
+lands. Three or four seconds on a decent connection, and noticeably more on the
+underground.
+
+Instant View removes that step entirely. One tap and the article is already
+open: text, headings, images, code. In the same typeface as the rest of Telegram
+and in the same theme, light or dark, that the reader has set.
+
+<ProjectLink
+	href="https://instantview.telegram.org/"
+	title="instantview.telegram.org"
+	description="The template editor and the format's documentation."
+/>
+
+## What the reader gets
+
+**Speed.** The page is served by Telegram from its own cache, not by your host. A
+reader will not feel the difference between an article on a fast CDN and one on
+slow shared hosting. Both open the same way.
+
+**The client's typography.** Instant View is not your layout but a structure:
+heading, paragraph, quote, code, image with a caption. Telegram renders it with
+its own typeface and spacing. Your fonts, colours and grid do not travel.
+
+**The theme.** If the reader runs dark mode, the article opens dark even when the
+site is light-only. My blog, for instance, has no dark theme at all, and in
+Instant View it gets one for free.
+
+**Nothing extra.** No cookie banner, no subscription pop-up, no header that
+sticks to the scroll. The format simply has nowhere to put them.
+
+## What the reader does not get
+
+The flip side of the same property: **no JavaScript runs in Instant View**.
+Nothing interactive from your site makes it across.
+
+On this blog, for example, code blocks carry a header with a "Copy code" button
+and an "Open" menu that sends the snippet to an AI service with a ready-made
+prompt. In Instant View none of that exists and none of it can - what remains is
+plain monospace text. The giscus comments do not travel either: they are an
+iframe from GitHub.
+
+Which leads to the thing that matters most for an author: **Instant View takes
+the reader away from your site**. No visit, no analytics, no comment, no click
+through to a project. The reader read it and stayed in the messenger.
+
+For a channel, where the goal is that people read the thing, that is the right
+trade. For a site that lives on traffic, think it through.
+
+## How it works
+
+The key thing to understand up front: **a template is written for a domain, not
+for a page**.
+
+You describe once where the heading sits on your pages, where the body of the
+article is, and what should be thrown away. From then on the template applies to
+every address matching its pattern. New posts land in Instant View by themselves,
+as long as the markup has not changed.
+
+The template language is XPath plus functions. Here is this blog's working
+template in full:
+
+```txt
+~version: "2.1"
+
+?path: /articles/.+
+?path: /en/articles/.+
+
+body: //article
+
+title:          $body//h1
+subtitle:       //meta[@property="og:description"]/@content
+author:         //meta[@name="author"]/@content
+published_date: //meta[@property="article:published_time"]/@content
+
+cover: $body//img[contains(@class, "aspect-video")]
+
+@remove: $body//a[contains(@class, "select-none")]
+@remove: $body//div[contains(@class, "code-block-header")]
+@remove: $body//img[contains(@class, "project-favicon")]
+```
+
+Twenty lines. Half of them say "take this from the meta tags", the other half say
+"throw the interface away".
+
+## Two tiers, and the second is not for everyone
+
+This is where many people stop without working it out, and that is a shame.
+
+**Tier one: your own link.** As soon as the template is written and works, the
+editor hands you an address shaped like
+`t.me/iv?url=<article address>&rhash=<template hash>`. That link opens in Instant
+View for everyone, immediately. No moderation needed. The `rhash` is one per
+domain, so for a new post only the address part changes.
+
+For a channel that is enough: post that link and you are done.
+
+**Tier two: moderation.** You need it only if you want Instant View to appear on
+**any** link to your domain that someone drops into a chat, without the `t.me/iv`
+wrapper. Here the template goes into Telegram's review queue: you mark several
+verified pages, the wait is unpredictable and rejection is possible.
+
+The practical difference: tier one covers your channel, tier two covers all of
+Telegram.
+
+## What the site needs
+
+Nothing special. Instant View reads ordinary HTML, and the more semantic it is,
+the shorter your template:
+
+- the article wrapped in `<article>`, so `body` is one line;
+- `og:title`, `og:description`, `og:image` present;
+- `article:published_time` present, otherwise you parse the date out of the text;
+- images in `<figure>` with `<figcaption>`, so captions arrive as captions;
+- code in `<pre><code>`, so it arrives as code.
+
+There is no need for a separate markup layer aimed at Instant View. If your HTML
+is decent, the template comes out short.
+
+## Three traps
+
+Now the part this text exists for. I collected all three personally.
+
+### There is no `@unwrap` function
+
+It seems obvious: there is a wrapper, remove it and keep the children. I wrote
+`@unwrap` and the editor answered:
+
+```txt
+Unknown function: @unwrap
+FUNCTION_NOT_FOUND: unwrap
+```
+
+Instant View 2.1 has **no such function at all**. There is `@remove`, which
+deletes a node together with its contents, plus `@replace_tag`, `@wrap`,
+`@wrap_inner` and `@detach`. Nothing unwraps.
+
+The good news is that you usually do not need it. Instant View looks for `<pre>`,
+`<table>` and `<figure>` across the whole body and parses them regardless of how
+many `div` layers they sit inside. I deleted the three `@unwrap` lines and
+everything fell into place.
+
+### `//img[1]` is not the first image on the page
+
+The classic XPath trap that catches everyone who writes it once a year.
+
+```txt
+cover: $body//img[1]
+```
+
+It reads as "the first image in the article" and means "every image that comes
+first inside its own parent". In my post about tatarverse there are **23** of
+those.
+
+To get the first image of the document you need brackets - `($body//img)[1]` - or,
+more reliably, a selector by attribute:
+
+```txt
+cover: $body//img[contains(@class, "aspect-video")]
+```
+
+Only the cover carries `aspect-video`. I checked across every post: exactly one
+match in each.
+
+### Small icons turn into rubbish
+
+The least obvious one. In my articles, external links and project cards pull in
+the domain's favicon, and every code block has a menu with service icons. On the
+site those are 16 by 16 pixel images sitting inline.
+
+Instant View does not know they are decorative. To it they are `<img>` elements,
+and each becomes **a separate image block** in the article. I counted in the built
+HTML: between 12 and 36 such icons in a single post.
+
+Three `@remove` lines by class fix it. But you can only notice it in the editor's
+preview: on the site those icons look perfectly fine.
+
+## You can only test it in the editor
+
+One last thing worth knowing in advance: **a template cannot be run locally**.
+There is no linter, no tests, no way to render Instant View on your own machine.
+The only check is the preview inside the editor at instantview.telegram.org, and
+you sign in there with a Telegram account.
+
+The practical takeaway: do not write the whole template in your head the way I
+did. Open the editor, paste five lines, look, add five more. I wrote twenty lines
+blind and collected three errors at once.
+
+## Is it worth it
+
+If you run a channel and drop links to your own articles into it - yes,
+unambiguously. Half an hour on a template, after which it works by itself for
+every future post, and the reader gets the article instantly, in their own theme.
+
+If your site lives on ads or conversions, do the maths. Instant View honestly
+takes the visit for itself.
