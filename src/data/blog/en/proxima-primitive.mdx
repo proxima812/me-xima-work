@@ -1,0 +1,168 @@
+---
+title: "proxima-primitive: components and a local MCP"
+description: "An Astro component library where docs and the live render are one page, served to agents through a local MCP server."
+category: "Engineering"
+pubDate: 2026-08-30
+cover: "../../../assets/blog/proxima-home.jpg"
+coverAlt: "Proxima Components home page: the headline, Browse docs, UI Kit and Search buttons, with the SearchShowcase component rendering live below"
+---
+
+import Figure from "@/components/blog/Figure.astro";
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import home from "../../../assets/blog/proxima-home.jpg";
+import fluidOrb from "../../../assets/blog/proxima-fluid-orb.jpg";
+import glass from "../../../assets/blog/proxima-glass-showcase.jpg";
+import spotlight from "../../../assets/blog/proxima-spotlight-deck.jpg";
+import portrait from "../../../assets/blog/proxima-portrait-accordion.jpg";
+import creditReel from "../../../assets/blog/proxima-credit-reel.jpg";
+import searchShowcase from "../../../assets/blog/proxima-search-showcase.jpg";
+import searchTriptych from "../../../assets/blog/proxima-search-triptych.jpg";
+import stories from "../../../assets/blog/proxima-stories.jpg";
+
+proxima-primitive is an Astro component library I put together in a single
+day: 32 components, seven categories, shadcn-style docs where every example
+is not a screenshot but a live render right on the page. Separate from the
+docs site, the repository ships an MCP server: an agent can query it directly
+and get props, source and examples without touching a single file by hand.
+
+<ProjectLink
+	href="https://github.com/proxima812/proxima-primitive"
+	title="proxima812/proxima-primitive"
+	description="Source: Astro 7.2, Tailwind v4, an MCP server on bun."
+/>
+
+<Figure
+	src={home}
+	alt="Proxima Components home page: the headline, Browse docs, UI Kit and Search buttons, with the SearchShowcase component rendering live below"
+	caption="The home page is the catalogue: all 32 components render right here, and every title links to its docs"
+/>
+
+## A stack with no extra weight
+
+Astro 7.2.9 and Tailwind v4, no React, Vue or any other rendering library -
+every component is a server-rendered `.astro` file. The dependencies that
+actually show up in the interface: `shiki` for code highlighting in the docs,
+`astro-icon` for icons, `tw-glass` and `tw-shimmer`, two Tailwind plugins each
+with a showcase component built around it. `zod` validates the MCP tool
+inputs. Nothing else on top.
+
+## Components worth the visit
+
+The library is honestly full of down-to-earth things like `Button`, `Badge`
+and `Breadcrumbs`, but the motion section is where it gets interesting.
+
+<Figure
+	src={fluidOrb}
+	alt="FluidOrb: a translucent blue orb with a smooth gradient, rendered by a WebGL shader"
+	caption="FluidOrb is a WebGL fragment shader built on fbm noise, packed into one .astro file. Color comes from a single hex prop; the shader derives the whole gradient from it"
+/>
+
+<Figure
+	src={glass}
+	alt="GlassShowcase: a grid of glass-refraction tiles over a busy blue-orange backdrop, labeled glass, glass-surface, glass-strength-5..50"
+	caption="GlassShowcase demonstrates every utility the tw-glass plugin ships, all over the same busy backdrop - without that you cannot tell glass-strength-10 from glass-strength-30 by eye"
+/>
+
+`tw-glass` builds the effect with zero JavaScript: the filter is a `data:`
+URI holding an inline SVG displacement map on a CSS custom property, and
+`backdrop-filter` reads it natively. `filterUnits="objectBoundingBox"` means
+the refraction scales with the element instead of being pinned to a pixel
+size.
+
+<Figure
+	src={spotlight}
+	alt="SpotlightDeck: a large purple Workspace card, with three smaller tiles of other colors below it"
+	caption="SpotlightDeck: four cards take turns being the hero while the rest fold into a row - the whole timing lives in one duration prop"
+/>
+
+<Figure
+	src={portrait}
+	alt="PortraitAccordion: a wide portrait card for Sarah Johnson with her title, and four narrow portrait strips with vertical names to the right"
+	caption="PortraitAccordion: one profile stays open while the rest collapse into vertical name strips - a pattern from card catalogues, not from slide decks"
+/>
+
+<Figure
+	src={creditReel}
+	alt="CreditReel: a black-and-white card with a macro flower shot, captioned Plate from Forms of the Field by Ilse Rademacher"
+	caption="CreditReel solves a real problem for media sites: a beautiful photo needs its credit visible, not buried in the page footer"
+/>
+
+<Figure
+	src={searchShowcase}
+	alt="SearchShowcase: three photos on a pink background with a search bar reading 'art' overlaid"
+	caption="SearchShowcase cycles through themes, colors and photo trios on a loop - a full-bleed hero block for a search product"
+/>
+
+<Figure
+	src={searchTriptych}
+	alt="SearchTriptych: three search cards - by color with a #BC361B swatch, by visual similarity, and one flagged AI content with Show, Blur, Hide buttons"
+	caption="SearchTriptych syncs three search scenarios at once: by color, by similarity, and AI-content moderation with real show, blur or hide states"
+/>
+
+<Figure
+	src={stories}
+	alt="Stories: a horizontal rail of six round avatars with a gradient ring, each captioned New story"
+	caption="Stories is web stories without a social network wrapped around them: a preview rail, progress and a modal player"
+/>
+
+## The local MCP server
+
+The repository has a `.mcp.json` at its root, and it is not a demo, it is a
+working server: `bun mcp/server.ts`, JSON-RPC over stdio, no port and no
+hosting. An agent working inside this repository picks it up automatically;
+an agent elsewhere just needs the absolute path to `server.ts` in its client
+config.
+
+```json
+{
+	"mcpServers": {
+		"proxima-components": {
+			"command": "bun",
+			"args": ["mcp/server.ts"]
+		}
+	}
+}
+```
+
+Four tools:
+
+| Tool | What it does |
+| --- | --- |
+| `list_components` | every component by category, with an optional category filter |
+| `get_component` | full docs: description, usage examples, props |
+| `get_component_source` | raw source of the implementation file |
+| `search_components` | keyword search across names, descriptions and docs |
+
+Every component is also readable as a resource at
+`proxima://components/{id}`. The point is not to stop an agent from reading
+files at all, it is to remove the guesswork: asking `search_components` for
+"gradient text" beats scanning `src/components` by name.
+
+## Why the docs and the MCP server cannot drift apart
+
+The server keeps no separate copy of component data. `mcp/registry.ts`
+hand-parses `src/content/components/*.mdx`: the frontmatter, the docs body,
+and every ` ```astro ` fence in order. The same file also renders the page in
+the browser. One source means it is impossible for the docs to say one thing
+and the MCP tool to answer another.
+
+That is also written down as a hard rule in the project's `CLAUDE.md`: add a
+component or change its props, and update `mcp/registry.ts` in the same pass,
+then verify:
+
+```bash
+bun -e 'import { loadComponents } from "./mcp/registry.ts"; console.log(await loadComponents())'
+```
+
+A second rule sits next to it: a new component is not done until it shows up
+in the docs navigation. The sidebar in `DocsLayout.astro` is built from the
+`components` collection, grouped by the `category` in its frontmatter - a
+valid category is usually enough, but a running `astro dev` does not always
+pick up a new collection file, so the real check is a clean build.
+
+<ProjectLink
+	href="https://github.com/proxima812/proxima-primitive"
+	title="proxima812/proxima-primitive"
+	description="32 components, the docs and the MCP server in one repository."
+/>

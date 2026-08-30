@@ -1,0 +1,118 @@
+---
+title: "How tatarverse changed"
+description: "From an abandoned tatars.kz to a catalogue of 424 centres in 53 countries: two attempts, a two-year pause, and a full shift in approach."
+category: "Engineering"
+pubDate: 2026-08-30
+cover: "../../../assets/blog/1.png"
+coverAlt: "The tatarverse logo: a tulip in a rounded square"
+---
+
+import Figure from "@/components/blog/Figure.astro";
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import oldSite from "../../../assets/blog/tatarverse-evolution-old.jpg";
+import newSite from "../../../assets/blog/tatarverse-evolution-new.jpg";
+
+Two years ago I was looking for a Tatar cultural centre in Almaty and could
+not find one. Not because it did not exist, but because the link to it lived
+in someone's private chat, not in a search engine. That irritation grew into
+the catalogue now called tatarverse.cc: 424 centres, communities and
+initiatives in 53 countries. Between the first line of code and the current
+version there was a shut-down project, a two-year pause and a complete change
+of approach.
+
+<ProjectLink
+	href="https://tatarverse.cc"
+	title="tatarverse.cc"
+	description="A catalogue of Tatar, Bashkir and Crimean Tatar centres: 424 entries across 53 countries."
+/>
+
+## The first attempt: tatars.kz
+
+Late 2023. I set up a site on Astro, start collecting links to centres, add a
+resources section, a list of Telegram channels and Tatar-language learning
+material. The idea is simple: one site with everything on it.
+
+<Figure
+	src={oldSite}
+	alt="tatars.kz home page: a headline about the Tatar language on a light background, placeholder links like 'A perfect example!' and 'Test' left in the footer"
+	caption="tatars.kz, late 2023. Placeholders like 'A perfect example!' and 'Test' stayed in the footer to the end"
+/>
+
+The project lived for over a year and stalled. The resources section had
+nothing to be checked against, the learning material had no author and no
+plan, and "one site for everything" in practice meant five weak sections
+instead of one strong one. Community feedback was close to none, because the
+site did not solve any single problem well enough for anyone to recommend it.
+I shut it down.
+
+## A pause, and a different question
+
+I did not touch the project for the next two years. When I came back to it,
+the question had changed. Instead of "how do I build a site about everything
+Tatar," I asked myself what exactly I could not find in Almaty two years
+earlier. The answer was narrow: a list of centres with addresses and contacts,
+filterable by country and city. Not media, not a textbook, not a news
+aggregator. A catalogue.
+
+## tatarverse.cc: a relaunch built on automation
+
+The new project, on a different domain, was built around that narrow answer.
+The key difference from tatars.kz is not the stack (Astro stayed), it is the
+data source: instead of manually collecting links, I parsed the World
+Congress of Tatars directory and ran the entries through AI models to verify
+and normalize addresses, categories and language. Manual collection produced
+a dozen centres a month. Automation with verification produced hundreds in
+weeks.
+
+<Figure
+	src={newSite}
+	alt="tatarverse.cc home page: dark theme, a large headline 'Find your people nearby', buttons 'Browse centres' and 'Centres nearby', stats showing 424 points, 53 countries, 98 regions"
+	caption="tatarverse.cc today: 424 centres, 53 countries, 98 regions, and the number grows every week"
+/>
+
+## What is inside now
+
+Of the 424 entries, 300 are Tatar, 98 Tatar-Bashkir, 16 Bashkir and 10 Crimean
+Tatar. 215 centres are abroad, 199 in Russia, and more than a dozen are
+online-only communities with no city attached. Search tolerates typos, there
+are filters by country, region and city with live counts, and geolocation for
+"centres nearby." Saving a card to bookmarks needs no account: the list lives
+in the browser. There is a PDF export of the catalogue for printing, and three
+themes, light, dark and system.
+
+One detail tatars.kz never had: the site talks to AI agents directly. A
+Cloudflare middleware function detects bots like ChatGPT, Claude and Gemini
+and serves them a markdown version of the page instead of HTML, so a model
+answering "where is the Tatar centre in Dubai" can build that answer straight
+from the catalogue's data.
+
+Technically the site is static: `output: "static"`, Astro 7.2, Tailwind v4, no
+UI framework and no host besides Cloudflare Pages.
+[A breakdown of the stack, the design system and real bugs](/en/articles/tatarverse-tech)
+is a separate post.
+
+## What is still missing
+
+I am keeping this list rather than hiding it, so as not to repeat tatars.kz's
+mistake of unbounded promises. tatarverse.cc has no API for machine access, no
+in-site form to submit a centre, only a pull request or a direct message, and
+no admin panel for editing data. All three are a deliberate choice for now,
+not a forgotten task.
+
+## The data is open
+
+Entries live in the repository as plain markdown files, each one carries its
+source, and anyone can fix a mistake without access to a database, because
+there is none. What is missing most right now is centre names in Latin
+America, the Middle East and Asia, plus reports of errors in entries that
+already exist.
+
+I told the fuller version of this story, with the numbers as of publication,
+in [an article on vc.ru (in Russian)](https://vc.ru/life/3102323-poisk-tatarskikh-tsentrov-katalog-organizatsiy).
+
+<ProjectLink
+	href="https://github.com/proxima812/tatarverse"
+	title="proxima812/tatarverse"
+	description="The catalogue's source and a CONTRIBUTING guide in Russian and English."
+/>

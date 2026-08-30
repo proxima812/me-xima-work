@@ -14,8 +14,10 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 const otherLocale = locale === "ru" ? "en" : "ru";
 
-const [latestPost] = await getPosts(locale);
+const posts = await getPosts(locale);
+const [latestPost] = posts;
 const badgeText = latestPost?.data.title ?? "proxima812";
+const postsCount = posts.length;
 ---
 
 <div class="flex flex-col items-center gap-6 py-6 text-center">
@@ -46,6 +48,7 @@ const badgeText = latestPost?.data.title ?? "proxima812";
 	<div class="flex flex-wrap items-center justify-center gap-3">
 		<Button href={getRelativeLocaleUrl(locale, "articles")}>
 			{t("home.cta.articles")}
+			({postsCount})
 		</Button>
 		<Button href={getRelativeLocaleUrl(locale, "projects")} variant="secondary">
 			{t("home.cta.projects")}

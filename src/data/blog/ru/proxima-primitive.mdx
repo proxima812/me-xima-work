@@ -1,0 +1,166 @@
+---
+title: "proxima-primitive: компоненты и локальный MCP"
+description: "Библиотека Astro-компонентов, где документация и живой рендер - одна и та же страница, а сам каталог отдается ИИ-агентам через локальный MCP-сервер."
+category: "Разработка"
+pubDate: 2026-08-30
+cover: "../../../assets/blog/proxima-home.jpg"
+coverAlt: "Главная Proxima Components: заголовок, кнопки Browse docs, UI Kit, Search, и живой рендер компонента SearchShowcase под ними"
+---
+
+import Figure from "@/components/blog/Figure.astro";
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+import home from "../../../assets/blog/proxima-home.jpg";
+import fluidOrb from "../../../assets/blog/proxima-fluid-orb.jpg";
+import glass from "../../../assets/blog/proxima-glass-showcase.jpg";
+import spotlight from "../../../assets/blog/proxima-spotlight-deck.jpg";
+import portrait from "../../../assets/blog/proxima-portrait-accordion.jpg";
+import creditReel from "../../../assets/blog/proxima-credit-reel.jpg";
+import searchShowcase from "../../../assets/blog/proxima-search-showcase.jpg";
+import searchTriptych from "../../../assets/blog/proxima-search-triptych.jpg";
+import stories from "../../../assets/blog/proxima-stories.jpg";
+
+proxima-primitive - библиотека Astro-компонентов, которую я собрал за один
+день: 32 компонента, семь категорий, доки в стиле shadcn, где каждый пример
+не картинка, а живой рендер прямо на странице. Отдельно от сайта в репозитории
+лежит MCP-сервер: агент спрашивает его напрямую и получает пропсы, исходники
+и примеры без единого захода в файлы руками.
+
+<ProjectLink
+	href="https://github.com/proxima812/proxima-primitive"
+	title="proxima812/proxima-primitive"
+	description="Исходники: Astro 7.2, Tailwind v4, MCP-сервер на bun."
+/>
+
+<Figure
+	src={home}
+	alt="Главная Proxima Components: заголовок, кнопки Browse docs, UI Kit, Search, и живой рендер компонента SearchShowcase под ними"
+	caption="Главная страница сама и есть каталог: все 32 компонента рендерятся здесь же, заголовок каждого ведет в доку"
+/>
+
+## Стек без лишнего веса
+
+Astro 7.2.9 и Tailwind v4, без React, Vue или любой другой библиотеки
+рендеринга - все компоненты серверные, `.astro`. Из зависимостей, которые
+реально видны в интерфейсе: `shiki` для подсветки кода в доках, `astro-icon`
+для иконок, `tw-glass` и `tw-shimmer` - два Tailwind-плагина, вокруг которых
+построены отдельные компоненты-витрины. `zod` валидирует входные данные MCP-
+инструментов. Ничего лишнего сверху.
+
+## Компоненты, ради которых стоит зайти
+
+Библиотека честно разбита на приземленные вещи вроде `Button`, `Badge` и
+`Breadcrumbs`, но интереснее раздел motion.
+
+<Figure
+	src={fluidOrb}
+	alt="FluidOrb: полупрозрачный синий шар с плавным градиентом, отрендеренный WebGL-шейдером"
+	caption="FluidOrb - фрагментный WebGL-шейдер на fbm-шуме, сжатый в один .astro-файл. Цвет задается одним hex-пропом, вся палитра выводится из него шейдером"
+/>
+
+<Figure
+	src={glass}
+	alt="GlassShowcase: сетка плиток с эффектом преломления стекла поверх сине-оранжевого фона, подписи glass, glass-surface, glass-strength-5..50"
+	caption="GlassShowcase демонстрирует каждую утилиту плагина tw-glass на одном и том же беспокойном фоне - без этого разницу между glass-strength-10 и glass-strength-30 на глаз не поймать"
+/>
+
+`tw-glass` собирает эффект без единого JS: фильтр - это `data:`-URI со
+встроенной SVG-картой смещений на CSS-переменной, `backdrop-filter`
+дочитывает ее нативно. `filterUnits="objectBoundingBox"` означает, что
+преломление масштабируется вместе с элементом, а не прибито к пикселям.
+
+<Figure
+	src={spotlight}
+	alt="SpotlightDeck: крупная фиолетовая карточка Workspace, снизу три уменьшенные плитки других цветов"
+	caption="SpotlightDeck: четыре карточки по очереди берут на себя роль героя, остальные складываются в строку - тайминг живет в одном пропе duration"
+/>
+
+<Figure
+	src={portrait}
+	alt="PortraitAccordion: широкая карточка с портретом Sarah Johnson и должностью, справа четыре узкие полоски-портрета с именами вертикальным текстом"
+	caption="PortraitAccordion: один профиль раскрыт, остальные схлопнуты в вертикальные полосы с именем - паттерн из карточных каталогов, а не из презентаций"
+/>
+
+<Figure
+	src={creditReel}
+	alt="CreditReel: черно-белая карточка с макро-снимком цветка, подпись Plate from Forms of the Field by Ilse Rademacher"
+	caption="CreditReel решает конкретную проблему медиасайтов: у любой красивой фотографии должен быть виден автор, а не потеряться в подвале страницы"
+/>
+
+<Figure
+	src={searchShowcase}
+	alt="SearchShowcase: три фото на розовом фоне, поверх строка поиска с текстом art"
+	caption="SearchShowcase перебирает темы, цвета и тройки фото по кругу - full-bleed заготовка под hero поисковика"
+/>
+
+<Figure
+	src={searchTriptych}
+	alt="SearchTriptych: три карточки поиска - по цвету с плашкой #BC361B, по визуальному сходству, и карточка с пометкой AI content и кнопками Show, Blur, Hide"
+	caption="SearchTriptych синхронизирует три сценария поиска сразу: по цвету, по похожести и модерацию AI-контента - с настоящими вариантами показать, размыть или скрыть"
+/>
+
+<Figure
+	src={stories}
+	alt="Stories: горизontальная лента из шести круглых аватаров с градиентной рамкой, подписи New story под каждым"
+	caption="Stories - веб-сторис без обертки соцсети: превью, прогресс и модальный плеер"
+/>
+
+## Локальный MCP-сервер
+
+У репозитория есть `.mcp.json` в корне, и это не витрина, а рабочий сервер:
+`bun mcp/server.ts`, JSON-RPC по stdio, без порта и без хостинга. Агент внутри
+этого репозитория подхватывает его сам, агенту снаружи достаточно прописать
+абсолютный путь до `server.ts` в конфиге клиента.
+
+```json
+{
+	"mcpServers": {
+		"proxima-components": {
+			"command": "bun",
+			"args": ["mcp/server.ts"]
+		}
+	}
+}
+```
+
+Четыре инструмента:
+
+| Инструмент | Что делает |
+| --- | --- |
+| `list_components` | все компоненты по категориям, с фильтром по одной |
+| `get_component` | полная дока: описание, примеры разметки, пропсы |
+| `get_component_source` | сырой исходник файла реализации |
+| `search_components` | поиск по имени, описанию и тексту доки |
+
+Каждый компонент дополнительно читается как ресурс на
+`proxima://components/{id}`. Смысл не в том, чтобы агент не читал файлы
+вообще, а в том, чтобы не гадать: спросить `search_components` с фразой
+«gradient text» быстрее, чем перебирать `src/components` по именам.
+
+## Почему доки и MCP не могут разойтись
+
+Сервер не хранит отдельную копию данных о компонентах. `mcp/registry.ts`
+руками парсит `src/content/components/*.mdx`: фронтматтер, тело доки и
+каждый ` ```astro ` блок по порядку. Тот же файл рендерит и страницу в
+браузере. Один источник - значит, невозможна ситуация, когда дока говорит
+одно, а MCP-инструмент отвечает другое.
+
+Это же оформлено как жесткое правило в `CLAUDE.md` проекта: добавил компонент
+или поменял пропсы - в этом же проходе поправь `mcp/registry.ts` и проверь
+результат:
+
+```bash
+bun -e 'import { loadComponents } from "./mcp/registry.ts"; console.log(await loadComponents())'
+```
+
+Второе правило рядом: новый компонент не готов, пока не появился в навигации
+доков. Сайдбар в `DocsLayout.astro` строится из коллекции `components`,
+сгруппированной по `category` из фронтматтера - валидной категории обычно
+достаточно, но `astro dev` не всегда подхватывает новый файл коллекции на
+лету, так что финальная проверка - это чистая сборка.
+
+<ProjectLink
+	href="https://github.com/proxima812/proxima-primitive"
+	title="proxima812/proxima-primitive"
+	description="32 компонента, доки и MCP-сервер в одном репозитории."
+/>
