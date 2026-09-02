@@ -235,6 +235,32 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 	@apply wide-breakout rounded-lg border border-border object-cover;
 }
 
+.post-content :global(.link-preview) {
+	--link-preview-width: 100%;
+	--link-preview-padding-inline: 1rem;
+	--link-preview-padding-block: 0.875rem;
+	--link-preview-corners: 0.5rem;
+	--link-preview-description-lines: 2;
+
+	@apply overflow-hidden border border-border bg-muted text-foreground;
+}
+
+.post-content :global(.link-preview__title) {
+	@apply text-base leading-snug font-semibold no-underline;
+}
+
+.post-content :global(.link-preview__domain),
+.post-content :global(.link-preview__description) {
+	@apply text-sm leading-relaxed text-muted-foreground;
+}
+
+.post-content :global(.link-preview img) {
+	@apply rounded-none border-0;
+	width: 100%;
+	max-width: 100%;
+	margin-inline: 0;
+}
+
 .post-content :global(figure) {
 	@apply flex flex-col gap-2;
 }

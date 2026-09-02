@@ -7,6 +7,8 @@ cover: "../../../assets/blog/useful-sites.svg"
 coverAlt: "A grid of cards with one of them marked by a bookmark"
 ---
 
+import { LinkPreview } from "@astro-community/astro-embed-link-preview";
+
 I exported my bookmarks: 417 links, 356 domains, collected over several years.
 Half of it turned out to be rubbish - one-off articles, hosting panels, forgotten
 tabs. What follows is what survived the clean-up.
@@ -20,6 +22,8 @@ them from someone else's list. Every link is alive.
 [realtimecolors.com](https://realtimecolors.com) - pick a palette and see it on a
 finished landing page mock-up rather than on swatches.
 
+<LinkPreview id="https://realtimecolors.com" />
+
 > It solves the core problem with colour generators: four pretty squares tell you
 > almost nothing about how text will read against a background. Here you look
 > straight at buttons, headings and small type.
@@ -27,14 +31,20 @@ finished landing page mock-up rather than on swatches.
 [uicolors.app](https://uicolors.app/create) - turns one hex into a full 50 to 950
 scale in Tailwind format.
 
+<LinkPreview id="https://uicolors.app/create" />
+
 > Exactly the format `@theme` expects in Tailwind v4: copy and paste. Building
 > that scale by hand takes half an hour and still comes out uneven.
 
 [hypercolor.dev](https://hypercolor.dev) - ready-made gradients as Tailwind
 classes.
 
+<LinkPreview id="https://hypercolor.dev" />
+
 [grainient.supply](https://grainient.supply) - over a thousand gradients with
 grain.
+
+<LinkPreview id="https://grainient.supply" />
 
 > The grain is not decoration but a technique: a clean gradient across a large
 > block bands because of limited bits per channel, and noise hides it. Apple uses
@@ -42,59 +52,116 @@ grain.
 
 [fffuel.co](https://fffuel.co) - SVG generators: waves, grids, blobs, noise.
 
+<LinkPreview id="https://fffuel.co" />
+
 > A dozen and a half separate tools on one domain, all exporting clean SVG with
 > no dependencies.
+
+[colorhunt.co](https://colorhunt.co) - ready-made palettes you can scan quickly.
+
+<LinkPreview id="https://colorhunt.co" />
+
+[coolors.co](https://coolors.co) - palette generation, trends and export in
+different formats.
+
+<LinkPreview id="https://coolors.co" />
+
+[colorsandfonts.com](https://www.colorsandfonts.com) - collections of colours,
+fonts and ready pairings for interfaces.
+
+<LinkPreview id="https://www.colorsandfonts.com" />
+
+[meshgradient.in](https://meshgradient.in) - a mesh-gradient generator with PNG
+export.
+
+<LinkPreview id="https://meshgradient.in" />
 
 ## Icons and graphics
 
 [icones.js.org](https://icones.js.org) - search across every Iconify set at once.
+
+<LinkPreview id="https://icones.js.org" />
 
 > I checked through their API today: **236 sets and 334,616 icons** in a single
 > search. It hands you SVG, JSX or a name for `astro-icon` in one click.
 
 [simpleicons.org](https://simpleicons.org) - brand logos in a single colour.
 
+<LinkPreview id="https://simpleicons.org" />
+
 > 3,400 icons under CC0, so you can use them anywhere without attribution. Each
 > carries its official brand colour, which saves you eyedropping someone's site.
 
 [svgl.app](https://svgl.app) - company logos in SVG, with dark variants.
+
+<LinkPreview id="https://svgl.app" />
 
 > The dark variants are what make it more useful than the alternatives: on a dark
 > background an ordinary logo often collapses into a black blob.
 
 [tabler.io](https://tabler.io/icons) - six thousand icons from one set.
 
+<LinkPreview id="https://tabler.io/icons" />
+
 > 6,150 of them, all drawn with a 2px stroke on a 24 by 24 grid. When the whole
 > interface comes from one set it looks assembled rather than glued together.
 
 [thiings.co](https://thiings.co) - a collection of 3D objects in one style.
 
+<LinkPreview id="https://thiings.co" />
+
 [undraw.co](https://undraw.co) - illustrations with a swappable accent colour.
+
+<LinkPreview id="https://undraw.co" />
 
 > Change the hex on the site and every illustration recolours to your brand
 > before you download it. The licence allows commercial use without attribution.
 
+[developer.apple.com/sf-symbols](https://developer.apple.com/sf-symbols/) -
+Apple's native system icon set.
+
+<LinkPreview id="https://developer.apple.com/sf-symbols/" />
+
+[iosicongallery.com](https://www.iosicongallery.com) - a gallery of iOS app
+icons.
+
+<LinkPreview id="https://www.iosicongallery.com" />
+
+[macosicons.com](https://macosicons.com) - a large collection of macOS icons.
+
+<LinkPreview id="https://macosicons.com" />
+
 ## Where to look when nothing comes
 
 [godly.website](https://godly.website) - a strictly curated collection of sites.
+
+<LinkPreview id="https://godly.website" />
 
 > It differs from Awwwards in having no nominations and no voting. One person
 > with taste collects what they consider good.
 
 [minimal.gallery](https://minimal.gallery) - the same, leaning minimal.
 
+<LinkPreview id="https://minimal.gallery" />
+
 [refero.design](https://refero.design) - references by element rather than by
 whole site.
+
+<LinkPreview id="https://refero.design" />
 
 > You search for "how an empty state looks" or "where search lives", not "a
 > pretty landing page". It saves time when the question is narrow.
 
 [mobbin.com](https://mobbin.com) - the same for mobile apps.
 
+<LinkPreview id="https://mobbin.com" />
+
 > Screenshots are arranged by flow: not one screen but the whole chain from
 > sign-up to payment. You can see how many steps competitors take.
 
 [darkmodedesign.com](https://darkmodedesign.com) - dark interfaces only.
+
+<LinkPreview id="https://darkmodedesign.com" />
 
 > Useful because dark themes break differently from light ones: shadows stop
 > working and borders have to be built out of lightness instead.
@@ -102,9 +169,38 @@ whole site.
 [cofolios.com](https://cofolios.com) - portfolios of designers at large
 companies.
 
+<LinkPreview id="https://cofolios.com" />
+
+[wallofportfolios.in](https://www.wallofportfolios.in) - another wall of
+portfolios, useful specifically for building taste.
+
+<LinkPreview id="https://www.wallofportfolios.in" />
+
+[portfolioproject.io](https://portfolioproject.io) - a curated collection of
+portfolios from designers and creative people.
+
+<LinkPreview id="https://portfolioproject.io" />
+
+[clay.global](https://clay.global) - an agency site worth studying as an example
+of expensive case-study presentation.
+
+<LinkPreview id="https://clay.global" />
+
+[nicolasloureiro.com](https://www.nicolasloureiro.com) - an interactive
+designer's portfolio with strong motion work.
+
+<LinkPreview id="https://www.nicolasloureiro.com" />
+
+[rohid.dev](https://rohid.dev) - a personal site where frontend and visual
+presentation carry equal weight.
+
+<LinkPreview id="https://rohid.dev" />
+
 ## Component libraries
 
 [heroui.com](https://heroui.com) - the former NextUI, third version.
+
+<LinkPreview id="https://heroui.com" />
 
 > The only mainstream one that takes surface layers and border tokens seriously:
 > they are derived by mixing the background with the foreground rather than
@@ -112,41 +208,100 @@ companies.
 
 [ui.shadcn.com](https://ui.shadcn.com) - the de facto standard for React.
 
+<LinkPreview id="https://ui.shadcn.com" />
+
 > Formally it is not a library at all: components are not installed as a package
 > but copied as source into your project. That is why you can edit them and why
 > updates break nothing.
 
 [21st.dev](https://21st.dev) - a catalogue of components by design engineers.
 
+<LinkPreview id="https://21st.dev" />
+
 [magicui.design](https://magicui.design) - animated blocks.
+
+<LinkPreview id="https://magicui.design" />
 
 > Take them one at a time. A site assembled entirely from these looks like a
 > thousand other landing pages: the effects are too recognisable.
 
 [uiverse.io](https://uiverse.io) - buttons and loaders from the community.
 
+<LinkPreview id="https://uiverse.io" />
+
 [preline.co](https://preline.co) - a large set of Tailwind blocks.
+
+<LinkPreview id="https://preline.co" />
+
+[motion-primitives.com](https://motion-primitives.com) - small React primitives
+for interface animation.
+
+<LinkPreview id="https://motion-primitives.com" />
+
+[animata.design](https://animata.design) - ready-made animated components with
+code.
+
+<LinkPreview id="https://animata.design" />
+
+[ui.lukacho.com](https://ui.lukacho.com) - components, charts and animations in
+one visual style.
+
+<LinkPreview id="https://ui.lukacho.com" />
+
+[hyperui.dev](https://www.hyperui.dev) - free Tailwind CSS v4 components.
+
+<LinkPreview id="https://www.hyperui.dev" />
+
+[merakiui.com](https://merakiui.com/components) - Tailwind components with many
+practical blocks.
+
+<LinkPreview id="https://merakiui.com/components" />
+
+[pagedone.io](https://pagedone.io) - a Figma design system and Tailwind blocks.
+
+<LinkPreview id="https://pagedone.io" />
+
+[reui.io](https://reui.io) - blocks and components around shadcn/ui.
+
+<LinkPreview id="https://reui.io" />
+
+[shadcnblocks.com](https://www.shadcnblocks.com) - ready-made sections for
+shadcn/ui projects.
+
+<LinkPreview id="https://www.shadcnblocks.com" />
 
 ## Small things that save time
 
 [carbon.now.sh](https://carbon.now.sh) - an image from a chunk of code.
 
+<LinkPreview id="https://carbon.now.sh" />
+
 [opengraph.xyz](https://www.opengraph.xyz) - shows how a link will unfurl in
 Telegram, X and Slack.
+
+<LinkPreview id="https://www.opengraph.xyz" />
 
 > Before publishing rather than after. It is separately useful for showing
 > several networks side by side: they want different image proportions.
 
 [favicon.io](https://favicon.io) - favicons from text, an image or an emoji.
 
+<LinkPreview id="https://favicon.io" />
+
 [shields.io](https://shields.io) - those README badges.
+
+<LinkPreview id="https://shields.io" />
 
 > The badges are dynamic: package version, bundle size and download counts pull
 > themselves and never go stale the way a hand-typed number does.
 
 [readme.so](https://readme.so) - assemble a README from blocks.
 
+<LinkPreview id="https://readme.so" />
+
 [cobalt.tools](https://cobalt.tools) - download video or audio from anywhere.
+
+<LinkPreview id="https://cobalt.tools" />
 
 > Open source, 42 thousand stars on GitHub, AGPL. It stores nothing: the file is
 > assembled on the fly and handed straight to you.
@@ -154,7 +309,11 @@ Telegram, X and Slack.
 [shots.so](https://shots.so) - mock-ups: a screenshot inside a device, on a
 background.
 
+<LinkPreview id="https://shots.so" />
+
 [easing.dev](https://easing.dev) - animation curves plotted side by side.
+
+<LinkPreview id="https://easing.dev" />
 
 > Seeing them next to each other explains the difference between `ease-out` and
 > `ease-in-out` in a second, where documentation takes a paragraph.
@@ -162,8 +321,38 @@ background.
 [devdocs.io](https://devdocs.io) - documentation for dozens of languages in one
 place.
 
+<LinkPreview id="https://devdocs.io" />
+
 > It works offline: the doc sets download into the browser. Priceless on a plane
 > or a train, where you need documentation exactly when there is no network.
+
+[time.fyi](https://time.fyi) - small tools for time, dates and time zones.
+
+<LinkPreview id="https://time.fyi" />
+
+[smashing.tools](https://smashing.tools) - a set of quick web tools in one
+place.
+
+<LinkPreview id="https://smashing.tools" />
+
+[toolfox.ru](https://toolfox.ru/tools/qr-generator) - a simple QR generator for
+links and text.
+
+<LinkPreview id="https://toolfox.ru/tools/qr-generator" />
+
+[html2astro.mb-js.site](https://html2astro.mb-js.site) - convert HTML into an
+Astro project.
+
+<LinkPreview id="https://html2astro.mb-js.site" />
+
+[story.to.design](https://story.to.design) - move code into Figma components.
+
+<LinkPreview id="https://story.to.design" />
+
+[animate-code.com](https://www.animate-code.com) - animated videos from code
+snippets.
+
+<LinkPreview id="https://www.animate-code.com" />
 
 ## Technically beautiful
 
@@ -172,12 +361,18 @@ These are more interesting to open than to describe.
 [shaders.paper.design](https://shaders.paper.design) - shader backgrounds with
 zero dependencies.
 
+<LinkPreview id="https://shaders.paper.design" />
+
 > It loads in a second and looks more expensive than half the sites that drag in
 > a heavy WebGL library for the same effect.
 
 [unicorn.studio](https://unicorn.studio) - a no-code editor for WebGL effects.
 
+<LinkPreview id="https://unicorn.studio" />
+
 [rive.app](https://rive.app) - interactive animation with state machines.
+
+<LinkPreview id="https://rive.app" />
 
 > Not video and not Lottie: the animation has a state machine and reacts to
 > input. The runtime is written in C++ and runs on the web, on mobile and in
@@ -186,10 +381,37 @@ zero dependencies.
 [haptics.lochie.me](https://haptics.lochie.me) - haptic feedback on the mobile
 web.
 
+<LinkPreview id="https://haptics.lochie.me" />
+
 > Open it on a phone or there is no point at all. It demonstrates something most
 > people do not know exists on the web.
 
 [torph.lochie.me](https://torph.lochie.me) - dependency-free text morphing.
+
+<LinkPreview id="https://torph.lochie.me" />
+
+[dora.run](https://www.dora.run) - 3D animated sites without code.
+
+<LinkPreview id="https://www.dora.run" />
+
+[framer.com](https://www.framer.com) - a visual website builder loved by
+designers.
+
+<LinkPreview id="https://www.framer.com" />
+
+[relume.io](https://library.relume.io) - a section library and quick start for
+site structure.
+
+<LinkPreview id="https://library.relume.io" />
+
+[webflow.com](https://webflow.com) - visual site building with proper publishing.
+
+<LinkPreview id="https://webflow.com" />
+
+[uvcanvas.com](https://uvcanvas.com/docs/components/tranquiluxe) - ready-made
+canvas backgrounds worth studying as a technique.
+
+<LinkPreview id="https://uvcanvas.com/docs/components/tranquiluxe" />
 
 ## Products with exemplary interfaces
 
@@ -198,6 +420,8 @@ Nothing to download here, but worth staring at.
 [linear.app](https://linear.app) - still the benchmark for speed and keyboard
 navigation.
 
+<LinkPreview id="https://linear.app" />
+
 > Half of today's issue trackers are an attempt to reproduce it. They also
 > publish the "Linear Method": how they run development, not just how the
 > interface looks.
@@ -205,10 +429,16 @@ navigation.
 [family.co](https://family.co) - a crypto wallet with the best animation in
 fintech.
 
+<LinkPreview id="https://family.co" />
+
 [raycast.com](https://raycast.com) - a desktop app made with respect for detail.
+
+<LinkPreview id="https://raycast.com" />
 
 [ghostty.org](https://ghostty.org) - a terminal whose documentation site is
 itself exemplary.
+
+<LinkPreview id="https://ghostty.org" />
 
 > Written in Zig, 60 thousand stars on GitHub, and the key difference from its
 > rivals: a native interface on every platform instead of Electron. That is where
@@ -216,10 +446,37 @@ itself exemplary.
 
 [cal.com](https://cal.com) - the open alternative to Calendly.
 
+<LinkPreview id="https://cal.com" />
+
+[plane.so](https://plane.so) - an open issue and project tracker.
+
+<LinkPreview id="https://plane.so" />
+
+[logsnag.com](https://logsnag.com) - event tracking with a pleasant product
+interface.
+
+<LinkPreview id="https://logsnag.com" />
+
+[tally.so](https://tally.so) - forms that do not feel like an old form builder.
+
+<LinkPreview id="https://tally.so" />
+
+[notion.com](https://www.notion.com) - a workspace worth studying for interface
+density.
+
+<LinkPreview id="https://www.notion.com" />
+
+[dia.browser.com](https://www.diabrowser.com) - a browser built around AI work
+with tabs.
+
+<LinkPreview id="https://www.diabrowser.com" />
+
 ## If you build with Astro
 
 [docs.astro.build](https://docs.astro.build) - documentation you keep coming back
 to.
+
+<LinkPreview id="https://docs.astro.build" />
 
 > Reading it beats googling recipes: half of the "strange" problems are described
 > there in plain words. Confirmed twice this week on my own work.
@@ -227,18 +484,56 @@ to.
 [ui.full.dev](https://ui.full.dev) - components built for Astro rather than React
 wrapped in Astro.
 
+<LinkPreview id="https://ui.full.dev" />
+
 [inox-tools.fryuni.dev](https://inox-tools.fryuni.dev) - integrations that patch
 gaps in the platform.
 
+<LinkPreview id="https://inox-tools.fryuni.dev" />
+
 [npmx.dev](https://npmx.dev) - an npm package browser.
+
+<LinkPreview id="https://npmx.dev" />
 
 > It shows weight, the dependency tree and file contents at once, without hopping
 > between npm, GitHub and bundlephobia.
 
 [risingstars.js.org](https://risingstars.js.org) - what took off during the year.
 
+<LinkPreview id="https://risingstars.js.org" />
+
 > It counts growth over the year rather than absolute stars, so new projects come
 > out on top instead of perennial leaders like React.
+
+[astroweekly.beehiiv.com](https://astroweekly.beehiiv.com) - a weekly roundup of
+Astro news.
+
+<LinkPreview id="https://astroweekly.beehiiv.com" />
+
+[astro.build/themes](https://astro.build/themes) - themes and starters from the
+Astro catalogue.
+
+<LinkPreview id="https://astro.build/themes" />
+
+[writenex.com/astro](https://writenex.com/astro) - a visual editor for Astro
+Content Collections.
+
+<LinkPreview id="https://writenex.com/astro" />
+
+[astroeditor.danny.is](https://astroeditor.danny.is) - a Markdown editor with
+Astro collection schemas.
+
+<LinkPreview id="https://astroeditor.danny.is" />
+
+[webcoreui.dev](https://webcoreui.dev) - Astro components with Svelte and React
+support.
+
+<LinkPreview id="https://webcoreui.dev" />
+
+[astro-consent-playground.vercel.app](https://astro-consent-playground.vercel.app) -
+a cookie consent playground for Astro.
+
+<LinkPreview id="https://astro-consent-playground.vercel.app" />
 
 ## Comments and content for static sites
 
@@ -246,25 +541,92 @@ Relevant if you run a static site and want something alive on it.
 
 [remark42.com](https://remark42.com) - comments on your own server.
 
+<LinkPreview id="https://remark42.com" />
+
 > Written in Go, deploys as one container, tracks nobody. The author is Umputun,
 > host of the Radio-T podcast, and the code is noticeably tidier than average.
 
 [cusdis.com](https://cusdis.com) - a lighter open alternative.
 
+<LinkPreview id="https://cusdis.com" />
+
 [pagescms.org](https://pagescms.org) - an admin panel for content that lives in
 git.
+
+<LinkPreview id="https://pagescms.org" />
 
 > One config file goes into the repository, the panel itself is hosted by them.
 > Nothing to deploy.
 
 [keystatic.com](https://keystatic.com) - the same, with a TypeScript schema.
 
+<LinkPreview id="https://keystatic.com" />
+
 > An important detail for static sites: the admin panel needs a server runtime,
 > so a purely static site has to move to hybrid rendering for it.
+
+[voidfull.com](https://voidfull.com) - light content management for static
+sites.
+
+<LinkPreview id="https://voidfull.com" />
+
+[sanity.io/templates/astro-sanity-clean](https://www.sanity.io/templates/astro-sanity-clean) -
+a clean Astro + Sanity template.
+
+<LinkPreview id="https://www.sanity.io/templates/astro-sanity-clean" />
+
+[zenblog.com](https://www.zenblog.com) - a small CMS for blogs.
+
+<LinkPreview id="https://www.zenblog.com" />
+
+[hashnode.com](https://hashnode.com) - blogging and API docs for developers and
+teams.
+
+<LinkPreview id="https://hashnode.com" />
+
+## Automation and services
+
+[make.com](https://www.make.com/en) - visual automation scenarios between
+services.
+
+<LinkPreview id="https://www.make.com/en" />
+
+[pipedream.com](https://pipedream.com) - automation where APIs, code, databases
+and AI live next to each other.
+
+<LinkPreview id="https://pipedream.com" />
+
+[zapier.com](https://zapier.com) - the classic glue between services.
+
+<LinkPreview id="https://zapier.com" />
+
+[convex.dev](https://www.convex.dev) - a fullstack TypeScript platform with a
+reactive database.
+
+<LinkPreview id="https://www.convex.dev" />
+
+[medusajs.com](https://medusajs.com) - open building blocks for e-commerce.
+
+<LinkPreview id="https://medusajs.com" />
+
+[refine.dev](https://refine.dev) - an open-source Retool alternative for
+internal tools.
+
+<LinkPreview id="https://refine.dev" />
+
+[loops.so](https://loops.so) - an email platform for SaaS.
+
+<LinkPreview id="https://loops.so" />
+
+[serpapi.com](https://serpapi.com) - an API for Google and other search results.
+
+<LinkPreview id="https://serpapi.com" />
 
 ## Simply pleasant
 
 [asoftmurmur.com](https://asoftmurmur.com) - background sounds of rain and wind.
+
+<LinkPreview id="https://asoftmurmur.com" />
 
 > A mixer with several tracks: blend rain with distant thunder and mute the
 > birds. It beats "focus" playlists because there is no melody for attention to
@@ -272,13 +634,19 @@ git.
 
 [thanks.dev](https://thanks.dev) - donations to library authors.
 
+<LinkPreview id="https://thanks.dev" />
+
 > It walks your repository's dependency graph and splits an amount across the
 > people whose code you actually use, transitive packages you never heard of
 > included.
 
 [notbyai.fyi](https://notbyai.fyi) - a "made by a human" badge.
 
+<LinkPreview id="https://notbyai.fyi" />
+
 [symbl.cc](https://symbl.cc) - emoji and Unicode characters with decent search.
+
+<LinkPreview id="https://symbl.cc" />
 
 ---
 

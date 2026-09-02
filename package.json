@@ -21,6 +21,7 @@
 		"verify": "bun run lint && bun run check && bun run check:seo"
 	},
 	"dependencies": {
+		"@astro-community/astro-embed-link-preview": "^0.3.1",
 		"@astrojs/mdx": "^7.0.7",
 		"@astrojs/sitemap": "^3.7.3",
 		"@dualmark/astro": "^0.10.0",

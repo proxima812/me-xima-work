@@ -7,6 +7,8 @@ cover: "../../../assets/blog/useful-sites.svg"
 coverAlt: "Сетка карточек, одна из них отмечена закладкой"
 ---
 
+import { LinkPreview } from "@astro-community/astro-embed-link-preview";
+
 Экспортировал закладки: 417 ссылок, 356 доменов, копилось несколько лет.
 Половина оказалась мусором - разовые статьи, панели хостингов, забытые вкладки.
 Ниже то, что осталось после чистки.
@@ -20,6 +22,8 @@ coverAlt: "Сетка карточек, одна из них отмечена з
 [realtimecolors.com](https://realtimecolors.com) - подбираете палитру и сразу
 видите ее на готовом макете лендинга, а не на квадратиках.
 
+<LinkPreview id="https://realtimecolors.com" />
+
 > Сайт решает главную проблему цветовых генераторов: четыре красивых квадрата
 > почти ничего не говорят о том, как будет читаться текст на фоне. Тут вы сразу
 > смотрите на кнопки, заголовки и мелкий шрифт.
@@ -27,14 +31,20 @@ coverAlt: "Сетка карточек, одна из них отмечена з
 [uicolors.app](https://uicolors.app/create) - из одного hex делает всю шкалу от
 50 до 950 в формате Tailwind.
 
+<LinkPreview id="https://uicolors.app/create" />
+
 > Ровно тот формат, который ждет `@theme` в Tailwind v4: скопировали и вставили.
 > Руками такая шкала подбирается полчаса, и все равно выходит неравномерной.
 
 [hypercolor.dev](https://hypercolor.dev) - готовые градиенты сразу классами
 Tailwind.
 
+<LinkPreview id="https://hypercolor.dev" />
+
 [grainient.supply](https://grainient.supply) - больше тысячи градиентов с
 зерном.
+
+<LinkPreview id="https://grainient.supply" />
 
 > Зерно тут не украшение, а прием: чистый градиент на большом блоке дает полосы
 > из-за нехватки битов на канал, а шум их прячет. Тот же трюк использует Apple
@@ -42,17 +52,43 @@ Tailwind.
 
 [fffuel.co](https://fffuel.co) - генераторы SVG: волны, сетки, блобы, шум.
 
+<LinkPreview id="https://fffuel.co" />
+
 > Полтора десятка отдельных инструментов на одном домене, все с экспортом в
 > чистый SVG без зависимостей.
+
+[colorhunt.co](https://colorhunt.co) - готовые палитры, которые можно быстро
+пролистать глазами.
+
+<LinkPreview id="https://colorhunt.co" />
+
+[coolors.co](https://coolors.co) - генератор палитр, тренды и экспорт в разные
+форматы.
+
+<LinkPreview id="https://coolors.co" />
+
+[colorsandfonts.com](https://www.colorsandfonts.com) - подборки цветов, шрифтов
+и готовых сочетаний для интерфейсов.
+
+<LinkPreview id="https://www.colorsandfonts.com" />
+
+[meshgradient.in](https://meshgradient.in) - генератор mesh-градиентов с
+экспортом в PNG.
+
+<LinkPreview id="https://meshgradient.in" />
 
 ## Иконки и графика
 
 [icones.js.org](https://icones.js.org) - поиск сразу по всем наборам Iconify.
 
+<LinkPreview id="https://icones.js.org" />
+
 > Проверил сегодня через их API: **236 наборов и 334 616 иконок** в одном поиске.
 > Отдает SVG, JSX или имя для `astro-icon` - копируется в один клик.
 
 [simpleicons.org](https://simpleicons.org) - логотипы брендов одним цветом.
+
+<LinkPreview id="https://simpleicons.org" />
 
 > 3400 иконок, лицензия CC0 - можно брать куда угодно без указания авторства.
 > У каждой прописан официальный фирменный цвет, так что не надо пипеткой лезть
@@ -60,51 +96,112 @@ Tailwind.
 
 [svgl.app](https://svgl.app) - логотипы компаний в SVG, с темными вариантами.
 
+<LinkPreview id="https://svgl.app" />
+
 > Именно темные варианты и делают его полезнее аналогов: на темном фоне обычный
 > логотип часто превращается в черное пятно.
 
 [tabler.io](https://tabler.io/icons) - шесть тысяч иконок одного набора.
+
+<LinkPreview id="https://tabler.io/icons" />
 
 > 6150 штук, все нарисованы одним штрихом в 2px на сетке 24 на 24. Когда весь
 > интерфейс из одного набора, он выглядит собранным, а не склеенным.
 
 [thiings.co](https://thiings.co) - коллекция трехмерных объектов в едином стиле.
 
+<LinkPreview id="https://thiings.co" />
+
 [undraw.co](https://undraw.co) - иллюстрации со сменным акцентным цветом.
+
+<LinkPreview id="https://undraw.co" />
 
 > Меняете hex на сайте - и все иллюстрации перекрашиваются под ваш бренд до
 > скачивания. Лицензия разрешает коммерческое использование без атрибуции.
 
+[developer.apple.com/sf-symbols](https://developer.apple.com/sf-symbols/) -
+родной набор системных иконок Apple.
+
+<LinkPreview id="https://developer.apple.com/sf-symbols/" />
+
+[iosicongallery.com](https://www.iosicongallery.com) - галерея иконок iOS-
+приложений.
+
+<LinkPreview id="https://www.iosicongallery.com" />
+
+[macosicons.com](https://macosicons.com) - огромная коллекция иконок для macOS.
+
+<LinkPreview id="https://macosicons.com" />
+
 ## Куда смотреть, когда не рисуется
 
 [godly.website](https://godly.website) - подборка сайтов, отобранных придирчиво.
+
+<LinkPreview id="https://godly.website" />
 
 > Отличается от Awwwards тем, что тут нет номинаций и голосований. Просто
 > человек с вкусом собирает то, что считает хорошим.
 
 [minimal.gallery](https://minimal.gallery) - то же, но с уклоном в минимализм.
 
+<LinkPreview id="https://minimal.gallery" />
+
 [refero.design](https://refero.design) - референсы по элементам, а не по сайтам
 целиком.
+
+<LinkPreview id="https://refero.design" />
 
 > Ищется не «красивый лендинг», а «как выглядит пустое состояние», «как сделан
 > онбординг», «где живет поиск». Экономит время, когда задача узкая.
 
 [mobbin.com](https://mobbin.com) - то же для мобильных приложений.
 
+<LinkPreview id="https://mobbin.com" />
+
 > Скриншоты разложены по флоу: не отдельный экран, а вся цепочка от регистрации
 > до оплаты. Видно, сколько шагов у конкурентов.
 
 [darkmodedesign.com](https://darkmodedesign.com) - только темные интерфейсы.
+
+<LinkPreview id="https://darkmodedesign.com" />
 
 > Полезно, потому что темная тема ломается иначе, чем светлая: тени перестают
 > работать, а границы приходится строить на светлоте.
 
 [cofolios.com](https://cofolios.com) - портфолио дизайнеров из крупных компаний.
 
+<LinkPreview id="https://cofolios.com" />
+
+[wallofportfolios.in](https://www.wallofportfolios.in) - еще одна стена
+портфолио, полезная именно для насмотренности.
+
+<LinkPreview id="https://www.wallofportfolios.in" />
+
+[portfolioproject.io](https://portfolioproject.io) - кураторская подборка
+портфолио дизайнеров и креативных специалистов.
+
+<LinkPreview id="https://portfolioproject.io" />
+
+[clay.global](https://clay.global) - сайт студии, который стоит разбирать как
+пример дорогой подачи кейсов.
+
+<LinkPreview id="https://clay.global" />
+
+[nicolasloureiro.com](https://www.nicolasloureiro.com) - портфолио
+интерактивного дизайнера с хорошей работой движения.
+
+<LinkPreview id="https://www.nicolasloureiro.com" />
+
+[rohid.dev](https://rohid.dev) - персональный сайт, где фронтенд и визуальная
+подача живут на равных.
+
+<LinkPreview id="https://rohid.dev" />
+
 ## Библиотеки компонентов
 
 [heroui.com](https://heroui.com) - бывший NextUI, третья версия.
+
+<LinkPreview id="https://heroui.com" />
 
 > Единственная из массовых, где всерьез продуманы слои поверхностей и токены
 > границ: они выводятся смешиванием фона с текстом, а не пишутся руками. Из-за
@@ -112,56 +209,150 @@ Tailwind.
 
 [ui.shadcn.com](https://ui.shadcn.com) - фактический стандарт для React.
 
+<LinkPreview id="https://ui.shadcn.com" />
+
 > Формально это вообще не библиотека: компоненты не ставятся пакетом, а
 > копируются исходниками в ваш проект. Поэтому их можно править, и поэтому
 > обновления не ломают ничего.
 
 [21st.dev](https://21st.dev) - каталог компонентов от дизайн-инженеров.
 
+<LinkPreview id="https://21st.dev" />
+
 [magicui.design](https://magicui.design) - анимированные блоки.
+
+<LinkPreview id="https://magicui.design" />
 
 > Брать по одному. Сайт, собранный из них целиком, выглядит одинаково с тысячей
 > других лендингов - эффекты слишком узнаваемые.
 
 [uiverse.io](https://uiverse.io) - кнопки и лоадеры от сообщества.
 
+<LinkPreview id="https://uiverse.io" />
+
 [preline.co](https://preline.co) - большой набор блоков на Tailwind.
+
+<LinkPreview id="https://preline.co" />
+
+[motion-primitives.com](https://motion-primitives.com) - маленькие React-
+примитивы для анимаций интерфейса.
+
+<LinkPreview id="https://motion-primitives.com" />
+
+[animata.design](https://animata.design) - готовые анимированные компоненты с
+кодом.
+
+<LinkPreview id="https://animata.design" />
+
+[ui.lukacho.com](https://ui.lukacho.com) - компоненты, графики и анимации в
+одном стиле.
+
+<LinkPreview id="https://ui.lukacho.com" />
+
+[hyperui.dev](https://www.hyperui.dev) - бесплатные компоненты на Tailwind CSS
+v4.
+
+<LinkPreview id="https://www.hyperui.dev" />
+
+[merakiui.com](https://merakiui.com/components) - набор Tailwind-компонентов с
+большим количеством прикладных блоков.
+
+<LinkPreview id="https://merakiui.com/components" />
+
+[pagedone.io](https://pagedone.io) - Figma-дизайн-система и Tailwind-блоки.
+
+<LinkPreview id="https://pagedone.io" />
+
+[reui.io](https://reui.io) - блоки и компоненты вокруг shadcn/ui.
+
+<LinkPreview id="https://reui.io" />
+
+[shadcnblocks.com](https://www.shadcnblocks.com) - готовые секции для проектов
+на shadcn/ui.
+
+<LinkPreview id="https://www.shadcnblocks.com" />
 
 ## Мелочи, которые экономят время
 
 [carbon.now.sh](https://carbon.now.sh) - картинка из куска кода.
 
+<LinkPreview id="https://carbon.now.sh" />
+
 [opengraph.xyz](https://www.opengraph.xyz) - показывает, как ссылка развернется
 в Telegram, X и Slack.
+
+<LinkPreview id="https://www.opengraph.xyz" />
 
 > До публикации, а не после. Отдельно полезно тем, что показывает разные
 > соцсети рядом: у них разные требования к пропорциям картинки.
 
 [favicon.io](https://favicon.io) - фавиконки из текста, картинки или эмодзи.
 
+<LinkPreview id="https://favicon.io" />
+
 [shields.io](https://shields.io) - те самые бейджи для README.
+
+<LinkPreview id="https://shields.io" />
 
 > Бейджи динамические: версия пакета, размер бандла и число загрузок
 > подтягиваются сами и не устаревают в отличие от цифры, вписанной руками.
 
 [readme.so](https://readme.so) - собрать README по блокам.
 
+<LinkPreview id="https://readme.so" />
+
 [cobalt.tools](https://cobalt.tools) - скачать видео или звук откуда угодно.
+
+<LinkPreview id="https://cobalt.tools" />
 
 > Открытый код, 42 тысячи звезд на GitHub, лицензия AGPL. Ничего не хранит у
 > себя: файл собирается на лету и сразу отдается вам.
 
 [shots.so](https://shots.so) - мокапы: скриншот в устройстве и на фоне.
 
+<LinkPreview id="https://shots.so" />
+
 [easing.dev](https://easing.dev) - графики кривых анимации рядом друг с другом.
+
+<LinkPreview id="https://easing.dev" />
 
 > Сравнение бок о бок объясняет разницу между `ease-out` и `ease-in-out` за
 > секунду, тогда как в документации на это уходит абзац.
 
 [devdocs.io](https://devdocs.io) - документация десятков языков в одном месте.
 
+<LinkPreview id="https://devdocs.io" />
+
 > Работает офлайн: наборы скачиваются в браузер. Незаменимо в самолете и в
 > поезде, где документация нужна ровно тогда, когда сети нет.
+
+[time.fyi](https://time.fyi) - маленькие инструменты для времени, дат и таймзон.
+
+<LinkPreview id="https://time.fyi" />
+
+[smashing.tools](https://smashing.tools) - набор быстрых веб-инструментов в
+одном месте.
+
+<LinkPreview id="https://smashing.tools" />
+
+[toolfox.ru](https://toolfox.ru/tools/qr-generator) - простой генератор QR-
+кодов для ссылок и текста.
+
+<LinkPreview id="https://toolfox.ru/tools/qr-generator" />
+
+[html2astro.mb-js.site](https://html2astro.mb-js.site) - конвертер HTML в Astro-
+проект.
+
+<LinkPreview id="https://html2astro.mb-js.site" />
+
+[story.to.design](https://story.to.design) - перенос кода в Figma-компоненты.
+
+<LinkPreview id="https://story.to.design" />
+
+[animate-code.com](https://www.animate-code.com) - анимированные ролики из
+кусков кода.
+
+<LinkPreview id="https://www.animate-code.com" />
 
 ## Технически красивое
 
@@ -170,12 +361,18 @@ Tailwind.
 [shaders.paper.design](https://shaders.paper.design) - шейдерные фоны без единой
 зависимости.
 
+<LinkPreview id="https://shaders.paper.design" />
+
 > Открывается за секунду и выглядит дороже половины сайтов, которые тащат ради
 > того же эффекта тяжелую webgl-библиотеку.
 
 [unicorn.studio](https://unicorn.studio) - редактор WebGL-эффектов без кода.
 
+<LinkPreview id="https://unicorn.studio" />
+
 [rive.app](https://rive.app) - интерактивная анимация с состояниями.
+
+<LinkPreview id="https://rive.app" />
 
 > Не видео и не Lottie: у анимации есть машина состояний, и она реагирует на
 > ввод. Рантайм написан на C++ и работает во вебе, на мобильных и в играх.
@@ -183,10 +380,38 @@ Tailwind.
 [haptics.lochie.me](https://haptics.lochie.me) - тактильная отдача в мобильном
 вебе.
 
+<LinkPreview id="https://haptics.lochie.me" />
+
 > Открывать обязательно с телефона, иначе смысла нет вообще. Демонстрирует то,
 > о существовании чего в вебе большинство не знает.
 
 [torph.lochie.me](https://torph.lochie.me) - морфинг текста без зависимостей.
+
+<LinkPreview id="https://torph.lochie.me" />
+
+[dora.run](https://www.dora.run) - 3D-анимированные сайты без кода.
+
+<LinkPreview id="https://www.dora.run" />
+
+[framer.com](https://www.framer.com) - визуальный конструктор сайтов, который
+любят дизайнеры.
+
+<LinkPreview id="https://www.framer.com" />
+
+[relume.io](https://library.relume.io) - библиотека секций и быстрый старт для
+структуры сайта.
+
+<LinkPreview id="https://library.relume.io" />
+
+[webflow.com](https://webflow.com) - визуальная сборка сайтов с нормальной
+публикацией.
+
+<LinkPreview id="https://webflow.com" />
+
+[uvcanvas.com](https://uvcanvas.com/docs/components/tranquiluxe) - готовые
+canvas-фоны, которые можно изучать как прием.
+
+<LinkPreview id="https://uvcanvas.com/docs/components/tranquiluxe" />
 
 ## Продукты с эталонным интерфейсом
 
@@ -194,27 +419,62 @@ Tailwind.
 
 [linear.app](https://linear.app) - эталон скорости и клавиатурной навигации.
 
+<LinkPreview id="https://linear.app" />
+
 > Половина современных трекеров - это попытка повторить. Заодно у них
 > опубликован «метод Linear»: как они ведут разработку, а не только как
 > выглядит интерфейс.
 
 [family.co](https://family.co) - криптокошелек с лучшими анимациями в финтехе.
 
+<LinkPreview id="https://family.co" />
+
 [raycast.com](https://raycast.com) - десктопное приложение, сделанное с
 уважением к деталям.
 
+<LinkPreview id="https://raycast.com" />
+
 [ghostty.org](https://ghostty.org) - терминал, у которого и сайт документации
 образцовый.
+
+<LinkPreview id="https://ghostty.org" />
 
 > Написан на Zig, 60 тысяч звезд на GitHub, и главное отличие от конкурентов:
 > нативный интерфейс на каждой платформе вместо Electron. Отсюда и скорость.
 
 [cal.com](https://cal.com) - открытая альтернатива Calendly.
 
+<LinkPreview id="https://cal.com" />
+
+[plane.so](https://plane.so) - открытый трекер задач и проектов.
+
+<LinkPreview id="https://plane.so" />
+
+[logsnag.com](https://logsnag.com) - трекинг событий с приятным продуктовым
+интерфейсом.
+
+<LinkPreview id="https://logsnag.com" />
+
+[tally.so](https://tally.so) - формы без ощущения старого конструктора форм.
+
+<LinkPreview id="https://tally.so" />
+
+[notion.com](https://www.notion.com) - рабочее пространство, которое стоит
+смотреть ради плотности интерфейса.
+
+<LinkPreview id="https://www.notion.com" />
+
+[dia.browser.com](https://www.diabrowser.com) - браузер, построенный вокруг ИИ-
+работы с вкладками.
+
+<LinkPreview id="https://www.diabrowser.com" />
+
 ## Если делаете сайт на Astro
 
 [docs.astro.build](https://docs.astro.build) - документация, к которой
 возвращаешься.
+
+<LinkPreview id="https://docs.astro.build" />
 
 > Читать ее полезнее, чем гуглить рецепты: половина «странных» проблем
 > описана там прямым текстом. Проверено на себе за эту неделю дважды.
@@ -222,18 +482,56 @@ Tailwind.
 [ui.full.dev](https://ui.full.dev) - компоненты именно под Astro, а не React,
 завернутый в Astro.
 
+<LinkPreview id="https://ui.full.dev" />
+
 [inox-tools.fryuni.dev](https://inox-tools.fryuni.dev) - набор интеграций,
 закрывающих дыры платформы.
 
+<LinkPreview id="https://inox-tools.fryuni.dev" />
+
 [npmx.dev](https://npmx.dev) - просмотр пакетов npm.
+
+<LinkPreview id="https://npmx.dev" />
 
 > Показывает вес, дерево зависимостей и содержимое файлов сразу, без прыжков
 > между npm, GitHub и bundlephobia.
 
 [risingstars.js.org](https://risingstars.js.org) - что взлетело за год.
 
+<LinkPreview id="https://risingstars.js.org" />
+
 > Считает не абсолютные звезды, а прирост за год. Поэтому в топе оказываются
 > новые проекты, а не вечные лидеры вроде React.
+
+[astroweekly.beehiiv.com](https://astroweekly.beehiiv.com) - еженедельная
+подборка новостей Astro.
+
+<LinkPreview id="https://astroweekly.beehiiv.com" />
+
+[astro.build/themes](https://astro.build/themes) - темы и стартеры из каталога
+Astro.
+
+<LinkPreview id="https://astro.build/themes" />
+
+[writenex.com/astro](https://writenex.com/astro) - визуальный редактор для
+Astro Content Collections.
+
+<LinkPreview id="https://writenex.com/astro" />
+
+[astroeditor.danny.is](https://astroeditor.danny.is) - редактор Markdown со
+схемой Astro-коллекций.
+
+<LinkPreview id="https://astroeditor.danny.is" />
+
+[webcoreui.dev](https://webcoreui.dev) - компоненты для Astro с поддержкой
+Svelte и React.
+
+<LinkPreview id="https://webcoreui.dev" />
+
+[astro-consent-playground.vercel.app](https://astro-consent-playground.vercel.app) -
+песочница для cookie consent в Astro.
+
+<LinkPreview id="https://astro-consent-playground.vercel.app" />
 
 ## Комментарии и контент для статики
 
@@ -241,24 +539,91 @@ Tailwind.
 
 [remark42.com](https://remark42.com) - комментарии на своем сервере.
 
+<LinkPreview id="https://remark42.com" />
+
 > Написан на Go, ставится одним контейнером, не следит за читателями. Автор -
 > Umputun, ведущий подкаста «Радио-Т», и код заметно опрятнее среднего.
 
 [cusdis.com](https://cusdis.com) - легкая альтернатива, открытая.
 
+<LinkPreview id="https://cusdis.com" />
+
 [pagescms.org](https://pagescms.org) - админка для контента прямо в гите.
+
+<LinkPreview id="https://pagescms.org" />
 
 > В репозиторий кладется один файл конфигурации, сама админка живет у них.
 > Ничего не надо разворачивать.
 
 [keystatic.com](https://keystatic.com) - то же, но со схемой на TypeScript.
 
+<LinkPreview id="https://keystatic.com" />
+
 > Важная деталь для статики: админке нужен серверный рантайм, поэтому чисто
 > статический сайт под нее придется перевести на гибридный режим.
+
+[voidfull.com](https://voidfull.com) - легкое управление контентом для
+статических сайтов.
+
+<LinkPreview id="https://voidfull.com" />
+
+[sanity.io/templates/astro-sanity-clean](https://www.sanity.io/templates/astro-sanity-clean) -
+чистый шаблон Astro + Sanity.
+
+<LinkPreview id="https://www.sanity.io/templates/astro-sanity-clean" />
+
+[zenblog.com](https://www.zenblog.com) - маленькая CMS для блога.
+
+<LinkPreview id="https://www.zenblog.com" />
+
+[hashnode.com](https://hashnode.com) - блог и документация для разработчиков и
+команд.
+
+<LinkPreview id="https://hashnode.com" />
+
+## Автоматизация и сервисы
+
+[make.com](https://www.make.com/en) - визуальные сценарии автоматизации между
+сервисами.
+
+<LinkPreview id="https://www.make.com/en" />
+
+[pipedream.com](https://pipedream.com) - автоматизация, где рядом живут API,
+код, базы и ИИ.
+
+<LinkPreview id="https://pipedream.com" />
+
+[zapier.com](https://zapier.com) - классический клей между сервисами.
+
+<LinkPreview id="https://zapier.com" />
+
+[convex.dev](https://www.convex.dev) - fullstack TypeScript-платформа с
+реактивной базой.
+
+<LinkPreview id="https://www.convex.dev" />
+
+[medusajs.com](https://medusajs.com) - открытые блоки для e-commerce.
+
+<LinkPreview id="https://medusajs.com" />
+
+[refine.dev](https://refine.dev) - open-source альтернатива Retool для
+внутренних инструментов.
+
+<LinkPreview id="https://refine.dev" />
+
+[loops.so](https://loops.so) - email-платформа для SaaS.
+
+<LinkPreview id="https://loops.so" />
+
+[serpapi.com](https://serpapi.com) - API для выдачи Google и других поисковиков.
+
+<LinkPreview id="https://serpapi.com" />
 
 ## Просто приятное
 
 [asoftmurmur.com](https://asoftmurmur.com) - фоновые звуки дождя и ветра.
+
+<LinkPreview id="https://asoftmurmur.com" />
 
 > Микшер на несколько дорожек: можно смешать дождь с далеким громом и убрать
 > птиц. Работает лучше плейлистов «для концентрации», потому что в нем нет
@@ -266,13 +631,19 @@ Tailwind.
 
 [thanks.dev](https://thanks.dev) - донаты авторам библиотек.
 
+<LinkPreview id="https://thanks.dev" />
+
 > Разбирает граф зависимостей вашего репозитория и раскидывает сумму по тем,
 > чей код вы реально используете, включая транзитивные пакеты, о которых вы не
 > подозреваете.
 
 [notbyai.fyi](https://notbyai.fyi) - бейдж «сделано человеком».
 
+<LinkPreview id="https://notbyai.fyi" />
+
 [symbl.cc](https://symbl.cc) - эмодзи и юникод-символы с нормальным поиском.
+
+<LinkPreview id="https://symbl.cc" />
 
 ---
 
