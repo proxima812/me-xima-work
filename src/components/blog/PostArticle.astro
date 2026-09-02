@@ -254,6 +254,17 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 	@apply text-sm leading-relaxed text-muted-foreground;
 }
 
+.post-content :global(.link-preview--no-metadata) {
+	display: none;
+}
+
+.post-content
+	:global(
+		.link-preview:not(.link-preview--no-metadata) + .link-preview-fallback
+	) {
+	display: none;
+}
+
 .post-content :global(.link-preview img) {
 	@apply rounded-none border-0;
 	width: 100%;

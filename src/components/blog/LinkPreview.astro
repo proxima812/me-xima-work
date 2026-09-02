@@ -1,0 +1,29 @@
+---
+import { LinkPreview as AstroEmbedLinkPreview } from "@astro-community/astro-embed-link-preview";
+
+export interface Props {
+	readonly id: string;
+	readonly title?: string;
+	readonly description?: string;
+	readonly hideMedia?: boolean;
+}
+
+const { id, title, description, hideMedia = false } = Astro.props;
+const displayTitle = title ?? id;
+const domain = new URL(id).hostname.replace(/^www\./, "");
+---
+
+<AstroEmbedLinkPreview id={id} hideMedia={hideMedia} />
+<article
+	class="link-preview link-preview-fallback link-preview--fallback link-preview--no-media"
+>
+	<div class="link-preview__content">
+		<header>
+			<a class="link-preview__title" href={id}>{displayTitle}</a>
+			<small class="link-preview__domain">{domain}</small>
+		</header>
+		{description && (
+			<small class="link-preview__description">{description}</small>
+		)}
+	</div>
+</article>
