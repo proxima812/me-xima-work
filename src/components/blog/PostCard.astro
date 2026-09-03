@@ -20,9 +20,9 @@ const formattedDate = new Intl.DateTimeFormat(locale, {
 }).format(pubDate);
 ---
 
-<article>
+<article class="h-full">
 	<a
-		class="group flex flex-col gap-4"
+		class="group flex h-full flex-col gap-4"
 		href={getRelativeLocaleUrl(locale, `articles/${slug}`)}
 	>
 		<Image
@@ -31,32 +31,33 @@ const formattedDate = new Intl.DateTimeFormat(locale, {
 			class="aspect-video w-full rounded-lg object-cover transition-opacity group-hover:opacity-90"
 		/>
 
-		<div class="flex flex-col gap-2">
-			<div
-				class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
-			>
-				{categories.map((category) => (
-						<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
-							<img
-								src={category.icon}
-								alt=""
-								class="h-4 w-4"
-								loading="lazy"
-								decoding="async"
-							/>
-							<span>{category.label[locale]}</span>
-						</span>
-					))}
+		<div class="flex flex-1 flex-col gap-2">
+			<div class="flex flex-col gap-1.5 text-sm text-muted-foreground">
+				<div class="flex flex-wrap items-center gap-2">
+					{categories.map((category) => (
+							<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
+								<img
+									src={category.icon}
+									alt=""
+									class="h-4 w-4"
+									loading="lazy"
+									decoding="async"
+								/>
+								<span>{category.label[locale]}</span>
+							</span>
+						))}
+				</div>
+
 				<time datetime={pubDate.toISOString()}>{formattedDate}</time>
 			</div>
 
 			<h3
-				class="text-xl font-bold text-balance decoration-border underline-offset-4 group-hover:underline"
+				class="line-clamp-2 min-h-14 text-xl font-bold text-balance decoration-border underline-offset-4 group-hover:underline"
 			>
 				{title}
 			</h3>
 
-			<p class="line-clamp-3 text-muted-foreground">{description}</p>
+			<p class="line-clamp-3 flex-1 text-muted-foreground">{description}</p>
 		</div>
 	</a>
 </article>
