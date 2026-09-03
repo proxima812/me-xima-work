@@ -1,0 +1,28 @@
+---
+import CategoryButtons from "@/components/blog/CategoryButtons.astro";
+import BackLink from "@/components/ui/BackLink.astro";
+import PageTitle from "@/components/ui/PageTitle.astro";
+import { buildAlternates, useTranslations } from "@/i18n";
+import Layout from "@/layouts/Layout.astro";
+
+const t = useTranslations("en");
+---
+
+<Layout
+	title={t("articleCategories.title")}
+	description={t("articleCategories.description")}
+	htmlLang="en"
+	locale="en-US"
+	alternates={buildAlternates(Astro.url.pathname)}
+>
+	<div class="flex flex-col gap-3">
+		<BackLink locale="en" />
+
+		<PageTitle>{t("articleCategories.title")}</PageTitle>
+		<p class="max-w-2xl text-muted-foreground">
+			{t("articleCategories.description")}
+		</p>
+	</div>
+
+	<CategoryButtons locale="en" countLabel={t("articleCategories.count")} />
+</Layout>

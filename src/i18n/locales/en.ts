@@ -14,6 +14,11 @@ export default {
 
 	"articles.title": "Articles",
 	"articles.description": "All blog articles, newest first.",
+	"articles.categories": "Categories",
+	"articleCategories.title": "Article categories",
+	"articleCategories.description":
+		"Technology categories for articles and the number of posts in each one.",
+	"articleCategories.count": "posts",
 
 	"article.readingTime": "min read",
 	"article.code.copy": "Copy code",

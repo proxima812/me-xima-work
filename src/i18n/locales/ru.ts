@@ -14,6 +14,11 @@ export default {
 
 	"articles.title": "Статьи",
 	"articles.description": "Все статьи блога - последние сверху.",
+	"articles.categories": "Категории",
+	"articleCategories.title": "Категории статей",
+	"articleCategories.description":
+		"Технологические категории статей и количество материалов в каждой.",
+	"articleCategories.count": "постов",
 
 	"article.readingTime": "мин чтения",
 	"article.code.copy": "Скопировать код",

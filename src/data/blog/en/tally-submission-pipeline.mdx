@@ -1,0 +1,376 @@
+---
+title: "Tally to GitHub PR without a backend"
+description: "How a Tally submission goes through a Cloudflare Worker and GitHub Actions to become an issue and draft PR, and where the pipeline broke."
+categories: ["automation", "cloudflare-workers", "github-actions", "typescript"]
+pubDate: 2026-09-03
+cover: "../../../assets/blog/tally-pipeline.svg"
+coverAlt: "Diagram: a form rectangle, a black issue block, and a PR branch block connected with arrows"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+<ProjectLink
+	href="https://media.tatarverse.cc/add"
+	title="media.tatarverse.cc/add"
+	description="The form where the whole flow starts: a submission for adding a project to the catalog."
+	repo="https://github.com/proxima812/media.tatarverse.cc"
+/>
+
+media.tatarverse.cc has a Tally form for submitting projects to the catalog.
+Until this week, submissions just sat in the Tally interface, and I had to
+open them manually. The task was to make each submission appear in GitHub
+Issues by itself, and optionally turn it into a draft PR with a card file.
+
+The site is static (`output: "static"`, no adapter), so it has no API route
+for a webhook and will not get one. The real HTTP endpoint has to live in a
+separate service - a Cloudflare Worker. The Worker then triggers GitHub
+Actions through `workflow_dispatch`. The final chain has three parts, and
+each part exposed its own bug.
+
+## The Whole Flow
+
+```txt
+Tally (form)
+  -> webhook, signed with HMAC (Tally-Signature)
+  -> Cloudflare Worker
+      - verifies the signature
+      - forwards fields[] almost unchanged
+      - POST .../actions/workflows/tally-submission.yml/dispatches
+  -> GitHub Actions #1: intake
+      - deduplicates by submissionId
+      - renders fields, creates an Issue with the card-submission label
+  -> [draft-card label on the issue]
+  -> GitHub Actions #2: draft PR
+      - only if the issue was created by the bot, not by a human
+      - assembles src/data/cards/draft-<slug>.md with TODOs for fields
+        that need human judgment
+      - opens a draft PR
+```
+
+Nothing is published automatically. The bot does not decide the category,
+tags, or which URL to pick from several candidates - a human does that.
+
+## Worker: Signature Verification With Web Crypto
+
+Cloudflare Workers are not a Node.js runtime by default, so `node:crypto`
+is not available without a compatibility flag. HMAC is computed through the
+built-in `SubtleCrypto`:
+
+```ts
+async function verifyTallySignature(
+	secret: string,
+	rawBody: string,
+	signatureHeader: string | null,
+): Promise<boolean> {
+	if (!signatureHeader) return false;
+
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(secret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+	const expected = base64FromBuffer(mac);
+
+	return timingSafeEqual(expected, signatureHeader);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+	if (a.length !== b.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < a.length; i++) {
+		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return mismatch === 0;
+}
+```
+
+The comparison uses `mismatch |=`, not `===`. A regular string comparison
+can stop at the first different character, and response timing can leak the
+signature byte by byte. For this webhook it may be paranoia, but it is a
+cheap habit.
+
+The GitHub token stored in the Worker is a fine-grained PAT with one
+permission only: `Actions: Read and write`, scoped to one repository. It
+cannot do anything else. The issue is created not by this token, but by the
+built-in token of the workflow run. If the Cloudflare secret leaks, it does
+not let anyone commit code - it only lets them start one specific workflow.
+
+## Bug One: Flattened Fields Lost Data
+
+The first Worker version sent fields to GitHub as `{label: value}`:
+
+```ts
+function flattenFields(fields: TallyField[]): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	for (const field of fields) {
+		result[field.label || field.key] = field.value;
+	}
+	return result;
+}
+```
+
+That looks reasonable until the first real submission arrives. For choice
+fields, such as checkboxes and dropdowns, Tally stores not the visible text
+in `value`, but the option id:
+
+```json
+"Для кого проект?": ["a97e0b03-56ee-4c5c-836c-bfff5fa58142", "b5551bed-8f48-4eed-a36f-e76cb5f9a9d8"]
+```
+
+The human-readable text is stored separately in `field.options[]`. By
+flattening the field into a single value, I threw away the only place where
+that text existed. The second surprise was a file field: its `value` is an
+array of objects like `{name, url, mimeType, size}`, and `Array.isArray(value)
+? value.join(", ") : ...` calls `toString()` on each object. The issue ended
+up with `[object Object]`.
+
+This can only be fixed in the Worker, because once the workflow starts, the
+data is already gone. The fix is to forward fields almost unchanged:
+
+```ts
+function pickFields(fields: readonly TallyField[]) {
+	return fields.map(({ key, label, type, value, options }) => ({
+		key,
+		label,
+		type,
+		value,
+		options,
+	}));
+}
+```
+
+Rendering - the decision about what a human should see - moved into the
+workflow.
+
+## workflow_dispatch Does Not Accept Objects
+
+`workflow_dispatch.inputs` supports only primitives: string, number,
+boolean, and choice. No arrays, no nested objects. The whole payload travels
+as one JSON string:
+
+```ts
+body: JSON.stringify({
+	ref: env.GITHUB_REF,
+	inputs: { payload: JSON.stringify(dispatchPayload) },
+})
+```
+
+The workflow parses it again. This is where it is easy to hit the second,
+less obvious problem. The first version read the input directly inside the
+script text:
+
+```yaml
+script: |
+  const submission = JSON.parse('${{ inputs.payload }}');
+```
+
+That is not JSON parsing. It is interpolating an untrusted string into code
+before execution. If the payload contains a backtick, `);`, or anything that
+looks like JavaScript, it runs as code instead of data. The right approach is
+to pass it through `env` and read it from `process.env` inside the runtime:
+
+```yaml
+env:
+  PAYLOAD: ${{ inputs.payload }}
+with:
+  script: |
+    const submission = JSON.parse(process.env.PAYLOAD);
+```
+
+It looks like a cosmetic difference, but it is the difference between
+templating and data input.
+
+## Render by Value Shape, Not by Field Type Name
+
+Tally has many field types, and maintaining a full list would create ongoing
+maintenance. Instead, rendering looks at the data shape:
+
+```js
+function renderFieldValue(field) {
+	const { value, options } = field;
+	if (value === null || value === undefined || value === "") return "-";
+
+	if (Array.isArray(options) && options.length > 0) {
+		const textById = new Map(options.map((o) => [o.id, o.text ?? o.id]));
+		if (Array.isArray(value)) {
+			return value.map((id) => textById.get(id) ?? id).join(", ");
+		}
+		if (textById.has(value)) return textById.get(value);
+	}
+
+	if (Array.isArray(value)) {
+		return value
+			.map((item) => {
+				if (item && typeof item === "object") {
+					return item.url && item.name ? `[${item.name}](${item.url})` : JSON.stringify(item);
+				}
+				return String(item);
+			})
+			.join(", ");
+	}
+
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+}
+```
+
+If `options` exist, option ids become option text. An array of objects with
+`url` and `name` is a file, so it becomes a Markdown link. Everything else is
+rendered as-is. Under the rendered fields, the issue contains a collapsible
+block with the raw JSON for every field. If the heuristic misses a future
+field shape, nothing is silently lost.
+
+## Draft PR: What the Bot Decides and What It Does Not
+
+Adding the `draft-card` label to an issue starts the second workflow. It
+extracts JSON from the collapsible block and fills only what does not need
+judgment: name, description, facts, and date. `peoples` (Tatars, Bashkirs,
+Crimean Tatars) is mapped from checkbox option text:
+
+```js
+const PEOPLE_BY_TEXT = {
+	"татары": "tatar",
+	"башкиры": "bashkir",
+	"крымские татары": "crimean-tatar",
+};
+const peoples = [];
+if (peoplesField && Array.isArray(peoplesField.options)) {
+	const textById = new Map(peoplesField.options.map((o) => [o.id, o.text]));
+	const ids = Array.isArray(peoplesField.value) ? peoplesField.value : [peoplesField.value];
+	for (const id of ids) {
+		const text = (textById.get(id) || "").toLowerCase();
+		if (PEOPLE_BY_TEXT[text]) peoples.push(PEOPLE_BY_TEXT[text]);
+	}
+}
+```
+
+The bot does not guess category, tags, or which `url` to pick from several
+candidate links. Instead it writes intentionally invalid YAML frontmatter:
+
+```yaml
+# TODO: выбрать url из ссылок ниже (это не автоматизируется - не угадываем)
+# Сайт: https://example.com/sinif-test-blog
+url: "TODO"
+# TODO: категория(и) - см. чеклист ревью, чем проект является
+categories: []
+# TODO: теги из реестра - см. чеклист ревью
+tags: []
+```
+
+An empty array where the Zod schema requires a non-empty one makes
+`bun run build` fail on that file. A red PR by design is better than a green
+PR with guessed categories: the draft must stay a draft until a human
+reviews it.
+
+## The Switch Nobody Remembers
+
+The finished workflow had the correct `permissions: pull-requests: write`,
+but `pulls.create()` still failed with 403. The reason was a separate
+repository setting: "Allow GitHub Actions to create pull requests". It is
+disabled by default and is independent from `permissions:` inside YAML. In
+the API it has an even less obvious name:
+
+```bash
+gh api repos/<owner>/<repo>/actions/permissions/workflow
+# {"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
+
+gh api --method PUT repos/<owner>/<repo>/actions/permissions/workflow \
+  -f default_workflow_permissions=read \
+  -F can_approve_pull_request_reviews=true
+```
+
+The field is named `can_approve_pull_request_reviews`, but it also controls
+PR creation. The name is historical: GitHub renamed the checkbox in the UI,
+but kept the API field as it was.
+
+## Public Repository, Public Issue
+
+The repository is public, so anyone can open an issue. It is enough to write
+the marker `<!-- tally-submission-id: fake -->` and a JSON block that looks
+like a real submission. If a maintainer adds the label by habit, a careless
+workflow could create a PR from someone else's text. Only a user with write
+access can add the label, because GitHub enforces that, but the issue body
+itself is not trusted.
+
+The check happens at the very start of the script:
+
+```js
+if (issue.user.login !== "github-actions[bot]") {
+	core.setFailed(
+		`issue #${issue.number} created outside automation (author: ${issue.user.login}) - refusing to build a draft from untrusted content.`,
+	);
+	return;
+}
+```
+
+Real issues are created only by the first workflow as `github-actions[bot]`.
+I tested this live: created an issue manually with the same marker and the
+same JSON, added the label, and the workflow correctly refused to create
+anything.
+
+## What Else Surfaced
+
+**File links contain an access token.** Tally attachment URLs include an
+`accessToken` query parameter. Because the repository is public, a link that
+lands in an issue body is visible to anyone who can open the issue. For logos
+that is fine. For anything private, it is not, and that needs a separate
+decision if the form ever starts collecting non-public data.
+
+**The root tsconfig was implicitly checking the Worker.** The Worker has its
+own `tsconfig.json`, so `bun run check` for the site should not depend on the
+strictness of a small separate service. But the root `tsconfig.json` included
+`**/*` and did not exclude `workers/`, so `astro check` pulled Worker files
+in as well. It surfaced a real but unrelated `exactOptionalPropertyTypes`
+error in Worker code. The fix was one line in `exclude`, but it only showed
+up because I ran the full `bun run check` after a seemingly unrelated change.
+
+**Dedup by marker, not by title.** Retrying webhook delivery is normal Tally
+behavior if the server does not return 200. Dedup checks for an existing
+issue by a hidden HTML comment, `<!-- tally-submission-id: ... -->`, at the
+start of the body, not by the visible issue title. The title can be edited;
+the marker should not be.
+
+## Testing Without a Real Webhook
+
+All three parts were tested separately before wiring them together:
+
+```bash
+# Manual HMAC on the real secret
+node -e '
+const crypto = require("crypto");
+const sig = crypto.createHmac("sha256", secret).update(body).digest("base64");
+'
+
+# Manual intake dry run, without the Worker
+gh workflow run tally-submission.yml -f payload='{"submissionId":"test-1", ...}'
+
+# Production: curl with a computed signature against the real Worker URL
+curl -i https://tally-intake.<subdomain>.workers.dev \
+  -H "Tally-Signature: <sig>" -d '<body>'
+```
+
+Three scenarios were run against the real public repository: a normal
+submission, a repeated delivery with the same `submissionId` (no duplicate
+issue should appear, even if the first one is already closed), and a forged
+issue (the workflow must refuse it). All test issues and PRs were closed and
+cleaned up afterwards - production should keep the logic, not the traces of
+the tests.
+
+## What Transfers to Another Project
+
+The Worker and the first workflow, intake, do not know the site's content
+schema. They only verify the signature and render arbitrary Tally fields. The
+second workflow, draft PR creation, is the opposite: it is fully tied to this
+specific schema. It searches for fields by exact form question text and writes
+a file for a specific Zod schema. In another project, that second part gets
+rewritten, while the first two parts can be reused almost as-is.
+
+<ProjectLink
+	href="https://media.tatarverse.cc"
+	title="media.tatarverse.cc"
+	description="The catalog this was built for: authors, channels, and media from Tatars, Bashkirs, and Crimean Tatars."
+	repo="https://github.com/proxima812/media.tatarverse.cc"
+/>

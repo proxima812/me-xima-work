@@ -1,0 +1,378 @@
+---
+title: "Tally -> GitHub PR без бэкенда"
+description: "Как заявка из Tally через Cloudflare Worker и GitHub Actions становится issue и черновиком PR, и где пайплайн ломался."
+categories: ["automation", "cloudflare-workers", "github-actions", "typescript"]
+pubDate: 2026-09-03
+cover: "../../../assets/blog/tally-pipeline.svg"
+coverAlt: "Схема: прямоугольник формы, черный блок issue, блок с веткой PR, соединены стрелками"
+---
+
+import ProjectLink from "@/components/projects/ProjectLink.astro";
+
+<ProjectLink
+	href="https://media.tatarverse.cc/add"
+	title="media.tatarverse.cc/add"
+	description="Форма, с которой все начинается: заявка на добавление проекта в каталог."
+	repo="https://github.com/proxima812/media.tatarverse.cc"
+/>
+
+У media.tatarverse.cc есть форма Tally для заявок на добавление проекта в
+каталог. До этой недели заявки просто лежали в интерфейсе Tally, и их надо
+было открывать руками. Задача была - сделать так, чтобы заявка сама
+появлялась в GitHub Issues, а по желанию еще и превращалась в черновик PR
+с файлом карточки.
+
+Сайт статический (`output: "static"`, без адаптера), значит собственного
+API-роута под вебхук у него нет и не будет. Реальный HTTP-эндпоинт можно
+получить только отдельным сервисом - Cloudflare Worker. Дальше он дергает
+GitHub Actions через `workflow_dispatch`. Получилась связка из трех частей,
+и на каждой всплыл свой баг.
+
+## Схема целиком
+
+```txt
+Tally (форма)
+  -> webhook, подписан HMAC (Tally-Signature)
+  -> Cloudflare Worker
+      - проверяет подпись
+      - пересылает fields[] почти как есть
+      - POST .../actions/workflows/tally-submission.yml/dispatches
+  -> GitHub Actions #1: прием
+      - дедуп по submissionId
+      - рендерит поля, создает Issue с меткой card-submission
+  -> [метка draft-card на issue]
+  -> GitHub Actions #2: черновик PR
+      - только если issue создан ботом, не человеком
+      - собирает src/data/cards/draft-<slug>.md с TODO на полях,
+        которые требуют суждения
+      - открывает draft PR
+```
+
+Ничего не публикуется само. Категорию, теги и выбор ссылки из нескольких
+кандидатов бот не решает - только человек.
+
+## Worker: проверка подписи через Web Crypto
+
+Cloudflare Workers по умолчанию не Node.js рантайм, поэтому `node:crypto`
+не подключить без флага совместимости. HMAC считается через встроенный
+`SubtleCrypto`:
+
+```ts
+async function verifyTallySignature(
+	secret: string,
+	rawBody: string,
+	signatureHeader: string | null,
+): Promise<boolean> {
+	if (!signatureHeader) return false;
+
+	const key = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(secret),
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign"],
+	);
+	const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+	const expected = base64FromBuffer(mac);
+
+	return timingSafeEqual(expected, signatureHeader);
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+	if (a.length !== b.length) return false;
+	let mismatch = 0;
+	for (let i = 0; i < a.length; i++) {
+		mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return mismatch === 0;
+}
+```
+
+Сравнение через `mismatch |=`, а не `===` - обычное сравнение строк
+выходит из цикла на первом несовпавшем символе, и по времени ответа можно
+восстановить подпись байт за байтом. Для вебхука это, возможно, паранойя,
+но привычка дешевая.
+
+Токен GitHub, который лежит в Worker, - fine-grained PAT с единственным
+правом `Actions: Read and write`, доступ только к одному репозиторию.
+Больше он ничего не умеет: issue создает не он, а встроенный токен самого
+workflow-запуска. Утечка секрета из Cloudflare не дает закоммитить ничего -
+только запустить один конкретный workflow.
+
+## Первый баг: схлопнул поля - потерял данные
+
+Первая версия Worker пересылала поля в GitHub как `{label: value}`:
+
+```ts
+function flattenFields(fields: TallyField[]): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	for (const field of fields) {
+		result[field.label || field.key] = field.value;
+	}
+	return result;
+}
+```
+
+Выглядит разумно, пока не приходит первая настоящая заявка. У полей с
+выбором (чекбоксы, дропдаун) Tally кладет в `value` не текст, а id
+варианта:
+
+```json
+"Для кого проект?": ["a97e0b03-56ee-4c5c-836c-bfff5fa58142", "b5551bed-8f48-4eed-a36f-e76cb5f9a9d8"]
+```
+
+Человекочитаемый текст лежит отдельно, в `field.options[]`. Схлопнув поле
+до одного значения, я выкинул единственное место, где этот текст вообще
+есть. Второй сюрприз - поле с файлом: `value` там массив объектов
+`{name, url, mimeType, size}`, и `Array.isArray(value) ? value.join(", ")
+: ...` вызывает на объекте `toString()`. В issue легло `[object Object]`.
+
+Чинится только на стороне Worker, потому что к моменту, когда за дело
+берется workflow, данных уже нет - схлопнутое значение не восстановить.
+Исправление - пересылать поля почти без изменений:
+
+```ts
+function pickFields(fields: readonly TallyField[]) {
+	return fields.map(({ key, label, type, value, options }) => ({
+		key,
+		label,
+		type,
+		value,
+		options,
+	}));
+}
+```
+
+А рендер - то есть решение, что показать человеку - переехал в workflow.
+
+## workflow_dispatch не умеет в объекты
+
+`workflow_dispatch.inputs` поддерживает только примитивы: строку, число,
+булево, выбор из списка. Ни массивов, ни вложенных объектов. Весь payload
+идет одной JSON-строкой:
+
+```ts
+body: JSON.stringify({
+	ref: env.GITHUB_REF,
+	inputs: { payload: JSON.stringify(dispatchPayload) },
+})
+```
+
+А на стороне workflow ее разбирают заново - и здесь легко словить вторую
+проблему, менее очевидную. Первая версия читала инпут прямо в тексте
+скрипта:
+
+```yaml
+script: |
+  const submission = JSON.parse('${{ inputs.payload }}');
+```
+
+Это не парсинг JSON - это интерполяция чужой строки прямо в код перед
+выполнением. Если в payload окажется обратная кавычка, `);` или что угодно
+похожее на JS, оно выполнится как код, а не как данные. Правильно -
+передать через `env` и прочитать из `process.env` уже внутри рантайма
+скрипта:
+
+```yaml
+env:
+  PAYLOAD: ${{ inputs.payload }}
+with:
+  script: |
+    const submission = JSON.parse(process.env.PAYLOAD);
+```
+
+Разница на вид косметическая, а по сути - между шаблонизацией и вводом
+данных.
+
+## Рендер по форме значения, а не по названию типа
+
+У Tally много типов полей, и держать полный список - это подписаться на
+постоянную поддержку. Вместо этого рендер смотрит на форму данных:
+
+```js
+function renderFieldValue(field) {
+	const { value, options } = field;
+	if (value === null || value === undefined || value === "") return "-";
+
+	if (Array.isArray(options) && options.length > 0) {
+		const textById = new Map(options.map((o) => [o.id, o.text ?? o.id]));
+		if (Array.isArray(value)) {
+			return value.map((id) => textById.get(id) ?? id).join(", ");
+		}
+		if (textById.has(value)) return textById.get(value);
+	}
+
+	if (Array.isArray(value)) {
+		return value
+			.map((item) => {
+				if (item && typeof item === "object") {
+					return item.url && item.name ? `[${item.name}](${item.url})` : JSON.stringify(item);
+				}
+				return String(item);
+			})
+			.join(", ");
+	}
+
+	if (typeof value === "object") return JSON.stringify(value);
+	return String(value);
+}
+```
+
+Есть `options` - подставляем текст варианта по id. Массив объектов с
+`url`/`name` - это файл, делаем markdown-ссылку. Все остальное - как есть.
+Под этим рендером в issue лежит спойлер с сырым JSON всех полей - на
+случай, если эвристика не предусмотрела какой-то тип поля, ничего не
+теряется молча.
+
+## Черновик PR: что бот решает, а что нет
+
+Метка `draft-card` на issue запускает второй workflow. Он достает JSON из
+спойлера и заполняет то, что не требует суждения: имя, описание, факты,
+дату. `peoples` (татары/башкиры/крымские татары) мэппится из текста
+варианта чекбокса:
+
+```js
+const PEOPLE_BY_TEXT = {
+	"татары": "tatar",
+	"башкиры": "bashkir",
+	"крымские татары": "crimean-tatar",
+};
+const peoples = [];
+if (peoplesField && Array.isArray(peoplesField.options)) {
+	const textById = new Map(peoplesField.options.map((o) => [o.id, o.text]));
+	const ids = Array.isArray(peoplesField.value) ? peoplesField.value : [peoplesField.value];
+	for (const id of ids) {
+		const text = (textById.get(id) || "").toLowerCase();
+		if (PEOPLE_BY_TEXT[text]) peoples.push(PEOPLE_BY_TEXT[text]);
+	}
+}
+```
+
+А категорию, теги и выбор `url` из нескольких кандидатных ссылок бот не
+угадывает вообще. Вместо этого - намеренно невалидный YAML-фронтматтер:
+
+```yaml
+# TODO: выбрать url из ссылок ниже (это не автоматизируется - не угадываем)
+# Сайт: https://example.com/sinif-test-blog
+url: "TODO"
+# TODO: категория(и) - см. чеклист ревью, чем проект является
+categories: []
+# TODO: теги из реестра - см. чеклист ревью
+tags: []
+```
+
+Пустой массив там, где Zod-схема требует непустой, - `bun run build` падает
+на этом файле. Красный PR по дизайну лучше, чем зеленый PR с угаданными
+наугад категориями: черновик обязан остаться черновиком, пока человек не
+проверит.
+
+## Рубильник, о котором никто не помнит
+
+Готовый workflow с правильными `permissions: pull-requests: write` все
+равно падал на `pulls.create()` с 403. Причина - отдельная настройка
+репозитория, "Allow GitHub Actions to create pull requests", по умолчанию
+выключена и не имеет отношения к `permissions:` внутри самого YAML. В API
+она называется еще менее понятно:
+
+```bash
+gh api repos/<owner>/<repo>/actions/permissions/workflow
+# {"default_workflow_permissions":"read","can_approve_pull_request_reviews":false}
+
+gh api --method PUT repos/<owner>/<repo>/actions/permissions/workflow \
+  -f default_workflow_permissions=read \
+  -F can_approve_pull_request_reviews=true
+```
+
+Поле называется `can_approve_pull_request_reviews`, а управляет в том
+числе созданием PR. Название - историческая случайность, GitHub
+переименовал чекбокс в интерфейсе, а поле API оставил как было.
+
+## Публичный репозиторий - публичный issue
+
+Репозиторий открытый, значит открыть issue может кто угодно. Достаточно
+вручную написать в теле маркер `<!-- tally-submission-id: fake -->` и
+JSON-блок, похожий на настоящую заявку, - и невнимательный мейнтейнер,
+навесивший метку по привычке, получит PR из чужого текста. Метку добавить
+может только тот, у кого есть права записи (это гарантирует сам GitHub),
+но содержимое issue никто не проверяет.
+
+Проверка - в первой же строчке скрипта, до всего остального:
+
+```js
+if (issue.user.login !== "github-actions[bot]") {
+	core.setFailed(
+		`issue #${issue.number} создан не автоматикой (автор: ${issue.user.login}) - не собираю черновик из чужого содержимого.`,
+	);
+	return;
+}
+```
+
+Настоящие issue создает только первый workflow от имени
+`github-actions[bot]`. Проверил вживую: завел issue руками с тем же
+маркером и тем же JSON, навесил метку - workflow корректно отказал, ничего
+не создал.
+
+## Что еще всплыло
+
+**Ссылки на файлы содержат токен доступа.** У вложений из Tally URL несет
+`accessToken` в query-параметре. Раз репозиторий публичный, эта ссылка,
+попав в тело issue, доступна всем, у кого есть ссылка на сам issue. Для
+логотипов это нормально, для чего-то приватного - нет, и это отдельный
+разговор, если форма когда-нибудь начнет собирать не только публичные
+данные.
+
+**Корневой tsconfig неявно проверял Worker.** У Worker свой, отдельный
+`tsconfig.json` - специально, чтобы `bun run check` сайта не зависел от
+строгости отдельного маленького сервиса. Но корневой `tsconfig.json`
+включал `**/*` без исключения папки `workers/`, и `astro check` тащил туда
+же файлы Worker. Вылезла настоящая, но никак не связанная с сайтом ошибка
+`exactOptionalPropertyTypes` в коде Worker. Починка - одна строка в
+`exclude`, но нашлась только потому, что я запустил полный `bun run check`
+после вроде бы не связанной правки.
+
+**Дедуп по маркеру, а не по заголовку.** Повторная доставка вебхука -
+обычное поведение Tally, если сервер не ответил 200. Дедуп ищет
+существующий issue по скрытому HTML-комментарию `<!-- tally-submission-id:
+... -->` в начале тела, не по видимому тексту заголовка: заголовок могут
+отредактировать, маркер - нет.
+
+## Проверка без реального вебхука
+
+Все три части тестировались отдельно, прежде чем собрать вместе:
+
+```bash
+# HMAC вручную, на реальном секрете
+node -e '
+const crypto = require("crypto");
+const sig = crypto.createHmac("sha256", secret).update(body).digest("base64");
+'
+
+# Ручной дриран приема, без Worker вообще
+gh workflow run tally-submission.yml -f payload='{"submissionId":"test-1", ...}'
+
+# Прод: curl с посчитанной подписью на реальный URL воркера
+curl -i https://tally-intake.<subdomain>.workers.dev \
+  -H "Tally-Signature: <sig>" -d '<body>'
+```
+
+Три сценария прогонялись на настоящем публичном репозитории: обычная
+заявка, повторная отправка того же `submissionId` (не должно быть дубля
+issue - даже если первый уже закрыт), и поддельный issue (должен получить
+отказ). Все тестовые issue и PR закрыты и подчищены после проверки - в
+проде должна остаться только логика, а не следы тестов.
+
+## Что переносится в другой проект, а что нет
+
+Worker и первый workflow (прием) не знают о конкретной схеме сайта - они
+просто проверяют подпись и рендерят произвольные поля Tally. Второй
+workflow (черновик PR) - наоборот, целиком завязан на конкретную схему: он
+ищет поля по точным названиям вопросов формы и пишет файл под конкретную
+Zod-схему content collection. В другом проекте это переписывается заново,
+а первые две части можно взять почти как есть.
+
+<ProjectLink
+	href="https://media.tatarverse.cc"
+	title="media.tatarverse.cc"
+	description="Каталог, ради которого все это писалось: авторы, каналы и медиа татар, башкир и крымских татар."
+	repo="https://github.com/proxima812/media.tatarverse.cc"
+/>

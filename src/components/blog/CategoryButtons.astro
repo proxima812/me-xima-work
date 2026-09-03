@@ -1,0 +1,34 @@
+---
+import type { LocaleCode } from "@/config/types";
+import { getCategoryStats } from "@/utils/blog";
+
+export interface Props {
+	locale: LocaleCode;
+	countLabel: string;
+}
+
+const { locale, countLabel } = Astro.props;
+const stats = await getCategoryStats(locale);
+---
+
+<div class="grid gap-3 sm:grid-cols-2">
+	{stats.map(({ category, count }) => (
+			<div class="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted px-4 py-3">
+				<div class="flex min-w-0 items-center gap-3">
+					<img
+						src={category.icon}
+						alt=""
+						class="h-7 w-7 shrink-0"
+						loading="lazy"
+						decoding="async"
+					/>
+					<span class="truncate font-medium text-foreground">
+						{category.label[locale]}
+					</span>
+				</div>
+				<span class="shrink-0 text-sm text-muted-foreground">
+					{count} {countLabel}
+				</span>
+			</div>
+		))}
+</div>

@@ -3,7 +3,7 @@ import { Image } from "astro:assets";
 import type { CollectionEntry } from "astro:content";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import type { LocaleCode } from "@/config/types";
-import { getPostSlug } from "@/utils/blog";
+import { getPostCategories, getPostSlug } from "@/utils/blog";
 
 export interface Props {
 	post: CollectionEntry<"blog">;
@@ -11,8 +11,9 @@ export interface Props {
 }
 
 const { post, locale } = Astro.props;
-const { title, description, category, pubDate, cover, coverAlt } = post.data;
+const { title, description, pubDate, cover, coverAlt } = post.data;
 const slug = getPostSlug(post);
+const categories = getPostCategories(post);
 
 const formattedDate = new Intl.DateTimeFormat(locale, {
 	dateStyle: "medium",
@@ -31,13 +32,23 @@ const formattedDate = new Intl.DateTimeFormat(locale, {
 		/>
 
 		<div class="flex flex-col gap-2">
-			<p
-				class="flex items-center gap-2 text-sm tracking-wide text-muted-foreground uppercase"
+			<div
+				class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"
 			>
-				<span>{category}</span>
-				<span aria-hidden="true">&bull;</span>
+				{categories.map((category) => (
+						<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
+							<img
+								src={category.icon}
+								alt=""
+								class="h-4 w-4"
+								loading="lazy"
+								decoding="async"
+							/>
+							<span>{category.label[locale]}</span>
+						</span>
+					))}
 				<time datetime={pubDate.toISOString()}>{formattedDate}</time>
-			</p>
+			</div>
 
 			<h3
 				class="text-xl font-bold text-balance decoration-border underline-offset-4 group-hover:underline"

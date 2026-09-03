@@ -12,6 +12,7 @@ import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
 import { config } from "main.config";
+import { blogCategoryIds } from "./data/blogCategories";
 
 const localesPattern = `{${config.i18n.locales.join(",")}}`;
 
@@ -24,7 +25,7 @@ const blog = defineCollection({
 		z.object({
 			title: z.string(),
 			description: z.string(),
-			category: z.string(),
+			categories: z.array(z.enum(blogCategoryIds)).min(1),
 			pubDate: z.coerce.date(),
 			cover: image(),
 			coverAlt: z.string(),

@@ -10,6 +10,7 @@ import BackLink from "@/components/ui/BackLink.astro";
 import PageTitle from "@/components/ui/PageTitle.astro";
 import type { LocaleCode } from "@/config/types";
 import { useTranslations } from "@/i18n";
+import { getPostCategories } from "@/utils/blog";
 
 export interface Props {
 	post: CollectionEntry<"blog">;
@@ -17,9 +18,10 @@ export interface Props {
 }
 
 const { post, locale } = Astro.props;
-const { title, category, pubDate, cover, coverAlt } = post.data;
+const { title, pubDate, cover, coverAlt } = post.data;
 const { Content } = await render(post);
 const t = useTranslations(locale);
+const categories = getPostCategories(post);
 
 const formattedDate = new Intl.DateTimeFormat(locale, {
 	dateStyle: "long",
@@ -37,7 +39,18 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 		<BackLink locale={locale} />
 
 		<p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-			<span>{category}</span>
+			{categories.map((category) => (
+					<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
+						<img
+							src={category.icon}
+							alt=""
+							class="h-4 w-4"
+							loading="lazy"
+							decoding="async"
+						/>
+						<span>{category.label[locale]}</span>
+					</span>
+				))}
 			<span aria-hidden="true">&middot;</span>
 			<time datetime={pubDate.toISOString()}>{formattedDate}</time>
 			<span aria-hidden="true">&middot;</span>

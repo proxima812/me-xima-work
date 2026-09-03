@@ -1,0 +1,78 @@
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	viewBox="0 0 1200 630"
+	width="1200"
+	height="630"
+>
+	<title>
+		Временная обложка: три блока - форма, вопросительный знак issue, ветка PR -
+		соединены стрелками
+	</title>
+	<rect width="1200" height="630" fill="#fafafa" />
+
+	<rect
+		x="150"
+		y="240"
+		width="220"
+		height="150"
+		rx="16"
+		fill="none"
+		stroke="#2b2b2b"
+		stroke-width="4"
+	/>
+	<g stroke="#2b2b2b" stroke-width="4" stroke-linecap="round">
+		<line x1="190" y1="290" x2="330" y2="290" />
+		<line x1="190" y1="330" x2="330" y2="330" />
+		<line x1="190" y1="360" x2="280" y2="360" />
+	</g>
+
+	<path d="M390 315h100" stroke="#2b2b2b" stroke-width="4" fill="none" />
+	<path
+		d="M470 295l20 20-20 20"
+		stroke="#2b2b2b"
+		stroke-width="4"
+		fill="none"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	/>
+
+	<rect x="510" y="240" width="180" height="150" rx="16" fill="#2b2b2b" />
+	<circle cx="600" cy="300" r="6" fill="#fafafa" />
+	<line
+		x1="600"
+		y1="325"
+		x2="600"
+		y2="355"
+		stroke="#fafafa"
+		stroke-width="6"
+		stroke-linecap="round"
+	/>
+
+	<path d="M710 315h100" stroke="#2b2b2b" stroke-width="4" fill="none" />
+	<path
+		d="M790 295l20 20-20 20"
+		stroke="#2b2b2b"
+		stroke-width="4"
+		fill="none"
+		stroke-linecap="round"
+		stroke-linejoin="round"
+	/>
+
+	<rect
+		x="830"
+		y="240"
+		width="220"
+		height="150"
+		rx="16"
+		fill="none"
+		stroke="#2b2b2b"
+		stroke-width="4"
+	/>
+	<g stroke="#2b2b2b" stroke-width="4" stroke-linecap="round">
+		<circle cx="900" cy="280" r="12" fill="#fafafa" />
+		<circle cx="900" cy="350" r="12" fill="#fafafa" />
+		<circle cx="980" cy="315" r="12" fill="#fafafa" />
+		<path d="M900 292v46" fill="none" />
+		<path d="M900 315c0-19 19-19 19-19h49" fill="none" />
+	</g>
+</svg>
