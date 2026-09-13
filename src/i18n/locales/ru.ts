@@ -7,10 +7,13 @@ export default {
 
 	"home.heading": "У меня есть, что сказать",
 	"home.switcher": "English",
-	"home.cta.articles": "Все статьи/посты",
-	"home.cta.projects": "Проекты",
+	"home.cta.articles": "Все статьи & посты",
 
 	"nav.back": "На главную",
+	"nav.home": "Главная",
+	"nav.articles": "Статьи",
+	"nav.categories": "Категории",
+	"nav.breadcrumbs": "Хлебные крошки",
 
 	"articles.title": "Статьи",
 	"articles.description": "Все статьи блога - последние сверху.",
@@ -21,6 +24,8 @@ export default {
 	"articleCategories.count": "постов",
 
 	"article.readingTime": "мин чтения",
+	"article.toc": "Содержание",
+	"article.progress": "Прогресс чтения",
 	"article.code.copy": "Скопировать код",
 	"article.code.copied": "Скопировано",
 	"article.code.open": "Открыть",
@@ -28,8 +33,6 @@ export default {
 
 	"comments.label": "Комментарии",
 
-	"projects.title": "Проекты",
-	"projects.description": "Ссылки на мои проекты.",
 	"projects.code": "код",
 
 	"notFound.title": "Ошибка 404 - такой страницы не существует",

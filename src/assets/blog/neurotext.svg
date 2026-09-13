@@ -8,7 +8,7 @@
 		Обложка: строки текста слева зачеркнуты, справа осталась короткая ровная
 		колонка
 	</title>
-	<rect width="1200" height="630" fill="#fafafa" />
+	<rect width="1200" height="630" fill="#ffffff" />
 
 	<g stroke="#c9c9c9" stroke-width="10" stroke-linecap="round">
 		<line x1="150" y1="200" x2="430" y2="200" />

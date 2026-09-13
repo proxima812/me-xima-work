@@ -1,0 +1,373 @@
+---
+import type { MarkdownHeading } from "astro";
+
+export interface Props {
+	headings: MarkdownHeading[];
+	label: string;
+	offset?: number;
+}
+
+const { headings, label, offset = 120 } = Astro.props;
+const sections = headings.map((heading) => ({ id: heading.slug, label: heading.text }));
+const firstSection = sections[0];
+---
+
+<div
+	class="scroll-progress fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+	data-scroll-progress
+	data-offset={offset}
+	data-open="false"
+	style="--surface-width: 12rem; --surface-height: 2rem; --surface-radius: 999px;"
+>
+	<div class="pointer-events-none invisible absolute" aria-hidden="true">
+		<div data-measure-collapsed class="inline-flex items-center gap-2.5 py-1.5 pl-2 pr-4">
+			<span class="h-5 w-5"></span>
+			<span data-measure-label class="whitespace-nowrap text-sm leading-none font-medium">
+				{firstSection?.label ?? label}
+			</span>
+		</div>
+		<div data-measure-open class="w-max p-1.5">
+			{
+				sections.map((section) => (
+					<div class="flex items-center gap-3 px-3 py-2 text-sm leading-none font-medium">
+						<span class="h-1.5 w-1.5" />
+						<span class="whitespace-nowrap">{section.label}</span>
+					</div>
+				))
+			}
+		</div>
+	</div>
+
+	<div
+		data-progress-surface
+		class="scroll-progress__surface absolute bottom-0 left-1/2 -translate-x-1/2 overflow-hidden border border-border/60 bg-background/70 shadow-lg backdrop-blur-md"
+	>
+		<div data-collapsed-layer class="scroll-progress__layer">
+			<button
+				type="button"
+				data-progress-toggle
+				aria-label={label}
+				aria-expanded="false"
+				class="absolute inset-0 flex items-center gap-2.5 py-1.5 pr-4 pl-2 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:outline-none"
+			>
+				<span class="shrink-0">
+					<svg viewBox="0 0 24 24" class="h-5 w-5 -rotate-90" aria-hidden="true">
+						<circle
+							cx="12"
+							cy="12"
+							r="10"
+							fill="none"
+							stroke-width="2.5"
+							class="stroke-foreground/15"></circle>
+						<circle
+							data-progress-circle
+							cx="12"
+							cy="12"
+							r="10"
+							fill="none"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							class="stroke-primary"></circle>
+					</svg>
+				</span>
+				<span
+					data-progress-label
+					class="relative shrink-0 whitespace-nowrap text-sm leading-none font-medium text-foreground"
+				>
+					{firstSection?.label ?? label}
+				</span>
+			</button>
+		</div>
+
+		<ul
+			data-progress-list
+			aria-label={label}
+			class="scroll-progress__layer scroll-progress__list flex flex-col p-1.5"
+			aria-hidden="true"
+			inert
+		>
+			{
+				sections.map((section, index) => (
+					<li>
+						<button
+							type="button"
+							data-progress-section={section.id}
+							style={`--index:${index};`}
+							class="scroll-progress__section relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm leading-none font-medium text-foreground/55 transition-colors hover:text-foreground/80 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-foreground focus-visible:outline-none "
+						>
+							<span
+								data-section-active
+								class="scroll-progress__active absolute inset-0 rounded-xl bg-primary/10"
+								aria-hidden="true"
+							/>
+							<span
+								class="scroll-progress__dot relative h-1.5 w-1.5 shrink-0 rounded-lg bg-primary/30"
+								aria-hidden="true"
+							/>
+							<span class="relative whitespace-nowrap">{section.label}</span>
+						</button>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</div>
+
+<style>
+	.scroll-progress__surface {
+		width: var(--surface-width);
+		height: var(--surface-height);
+		border-radius: var(--surface-radius);
+		transition:
+			width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+			height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+			border-radius 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.scroll-progress__layer {
+		position: absolute;
+		inset: 0;
+		transition:
+			opacity 0.24s cubic-bezier(0.65, 0, 0.35, 1),
+			filter 0.24s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.scroll-progress__list {
+		opacity: 0;
+		filter: blur(4px);
+		pointer-events: none;
+	}
+
+	.scroll-progress[data-open="true"] .scroll-progress__list {
+		opacity: 1;
+		filter: blur(0);
+		pointer-events: auto;
+	}
+
+	.scroll-progress[data-open="true"] [data-collapsed-layer] {
+		opacity: 0;
+		filter: blur(4px);
+		pointer-events: none;
+	}
+
+	.scroll-progress__active {
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	.scroll-progress__section[data-active="true"] {
+		color: var(--color-foreground);
+	}
+
+	.scroll-progress__section[data-active="true"] .scroll-progress__active {
+		opacity: 1;
+	}
+
+	.scroll-progress__section[data-active="true"] .scroll-progress__dot {
+		background-color: var(--color-primary);
+	}
+
+	.scroll-progress[data-open="true"] .scroll-progress__section {
+		animation: scroll-progress-section-in 0.3s cubic-bezier(0.65, 0, 0.35, 1) both;
+		animation-delay: calc(0.04s + var(--index) * 0.03s);
+	}
+
+	[data-progress-label] {
+		animation: scroll-progress-label-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	@keyframes scroll-progress-section-in {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+			filter: blur(3px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+			filter: blur(0);
+		}
+	}
+
+	@keyframes scroll-progress-label-in {
+		from {
+			opacity: 0;
+			filter: blur(1.5px);
+		}
+		to {
+			opacity: 1;
+			filter: blur(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.scroll-progress__surface,
+		.scroll-progress__layer,
+		.scroll-progress__active {
+			transition: none;
+		}
+
+		.scroll-progress[data-open="true"] .scroll-progress__section,
+		[data-progress-label] {
+			animation: none;
+		}
+	}
+</style>
+
+<script is:inline>
+	const progressRoot = document.querySelector("[data-scroll-progress]");
+	if (progressRoot) {
+		const sections = [...progressRoot.querySelectorAll("[data-progress-section]")];
+		const surface = progressRoot.querySelector("[data-progress-surface]");
+		const toggle = progressRoot.querySelector("[data-progress-toggle]");
+		const list = progressRoot.querySelector("[data-progress-list]");
+		const labelNode = progressRoot.querySelector("[data-progress-label]");
+		const tocLinks = [...document.querySelectorAll("[data-toc-link]")];
+		const tocRail = document.querySelector("[data-toc-rail]");
+		const measureCollapsed = progressRoot.querySelector("[data-measure-collapsed]");
+		const measureOpen = progressRoot.querySelector("[data-measure-open]");
+		const measureLabel = progressRoot.querySelector("[data-measure-label]");
+		const circle = progressRoot.querySelector("[data-progress-circle]");
+		const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+		const circumference = 2 * Math.PI * 10;
+		const offset = Number(progressRoot.dataset.offset ?? 120);
+		let activeId = sections[0]?.dataset.progressSection;
+		let scrollLock = false;
+		let scrollLockTimer;
+		let frame = 0;
+
+		const setSurfaceSize = (open) => {
+			const measured = open ? measureOpen : measureCollapsed;
+			if (!measured || !surface) return;
+			progressRoot.style.setProperty("--surface-width", `${measured.offsetWidth}px`);
+			progressRoot.style.setProperty("--surface-height", `${measured.offsetHeight}px`);
+			progressRoot.style.setProperty(
+				"--surface-radius",
+				open ? "26px" : `${measured.offsetHeight / 2}px`,
+			);
+		};
+
+		const setActive = (id) => {
+			if (!id) return;
+			const changed = id !== activeId;
+			activeId = id;
+			sections.forEach((section) => {
+				section.dataset.active = String(section.dataset.progressSection === activeId);
+			});
+			tocLinks.forEach((link) => {
+				const isActive = link.dataset.tocLink === activeId;
+				link.dataset.active = String(isActive);
+				if (isActive) link.setAttribute("aria-current", "location");
+				else link.removeAttribute("aria-current");
+			});
+
+			const activeTocLink = tocLinks.find((link) => link.dataset.tocLink === activeId);
+			if (activeTocLink && tocRail) {
+				const tocList = activeTocLink.closest("ol");
+				const tocRect = tocList?.parentElement?.getBoundingClientRect();
+				const linkRect = activeTocLink.getBoundingClientRect();
+				if (tocRect) {
+					tocRail.style.transform = `translateY(${linkRect.top - tocRect.top}px)`;
+					tocRail.style.height = `${linkRect.height}px`;
+				}
+			}
+
+			const activeSection = sections.find(
+				(section) => section.dataset.progressSection === activeId,
+			);
+			const nextLabel = activeSection?.textContent?.trim();
+			if (nextLabel && labelNode && changed) {
+				if (measureLabel) measureLabel.textContent = nextLabel;
+				labelNode.textContent = nextLabel;
+				labelNode.animate(
+					[
+						{ opacity: 0, filter: reduceMotion ? "none" : "blur(1.5px)" },
+						{ opacity: 1, filter: "blur(0)" },
+					],
+					{ duration: reduceMotion ? 0 : 220, easing: "cubic-bezier(.22,1,.36,1)" },
+				);
+				setSurfaceSize(progressRoot.dataset.open === "true");
+			}
+		};
+
+		const update = () => {
+			frame = 0;
+			const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+			const progress =
+				scrollableHeight > 0 ? Math.min(1, Math.max(0, window.scrollY / scrollableHeight)) : 1;
+			if (circle) circle.style.strokeDashoffset = `${circumference * (1 - progress)}`;
+
+			if (!scrollLock) {
+				const current = [...document.querySelectorAll(".post-content h2, .post-content h3")]
+					.reverse()
+					.find((heading) => heading.getBoundingClientRect().top <= offset);
+				setActive(current?.id ?? sections[0]?.dataset.progressSection);
+			}
+		};
+
+		const requestUpdate = () => {
+			if (!frame) frame = requestAnimationFrame(update);
+		};
+
+		const setOpen = (open) => {
+			progressRoot.dataset.open = String(open);
+			toggle?.setAttribute("aria-expanded", String(open));
+			list?.setAttribute("aria-hidden", String(!open));
+			if (open) list?.removeAttribute("inert");
+			else list?.setAttribute("inert", "");
+			setSurfaceSize(open);
+		};
+
+		const selectSection = (id) => {
+			scrollLock = true;
+			clearTimeout(scrollLockTimer);
+			scrollLockTimer = setTimeout(
+				() => {
+					scrollLock = false;
+				},
+				reduceMotion ? 0 : 700,
+			);
+			setActive(id);
+			setOpen(false);
+			document.getElementById(id)?.scrollIntoView({
+				behavior: reduceMotion ? "auto" : "smooth",
+				block: "start",
+			});
+		};
+
+		circle?.style.setProperty("stroke-dasharray", String(circumference));
+		circle?.style.setProperty("stroke-dashoffset", String(circumference));
+		sections.forEach((section) => {
+			section.addEventListener("click", () => selectSection(section.dataset.progressSection));
+		});
+		toggle?.addEventListener("click", () => {
+			setOpen(progressRoot.dataset.open !== "true");
+		});
+		document.addEventListener("pointerdown", (event) => {
+			if (!progressRoot.contains(event.target) && progressRoot.dataset.open === "true") {
+				setOpen(false);
+			}
+		});
+		document.addEventListener("keydown", (event) => {
+			if (event.key === "Escape" && progressRoot.dataset.open === "true") {
+				setOpen(false);
+				toggle?.focus();
+			}
+		});
+		window.addEventListener("scroll", requestUpdate, { passive: true });
+		window.addEventListener("resize", () => {
+			setSurfaceSize(progressRoot.dataset.open === "true");
+			requestUpdate();
+		});
+		new ResizeObserver(() => setSurfaceSize(progressRoot.dataset.open === "true")).observe(
+			measureCollapsed,
+		);
+		if (measureOpen)
+			new ResizeObserver(() => setSurfaceSize(progressRoot.dataset.open === "true")).observe(
+				measureOpen,
+			);
+		setActive(activeId);
+		setSurfaceSize(false);
+		requestUpdate();
+	}
+</script>

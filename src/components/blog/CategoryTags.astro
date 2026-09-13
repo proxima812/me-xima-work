@@ -1,0 +1,24 @@
+---
+import type { LocaleCode } from "@/config/types";
+import type { BlogCategory } from "@/data/blogCategories";
+
+export interface Props {
+	readonly categories: readonly BlogCategory[];
+	readonly locale: LocaleCode;
+}
+
+const { categories, locale } = Astro.props;
+---
+
+{categories.map((category) => (
+	<span class="inline-flex items-center gap-1.5 font-medium">
+		<img
+			src={category.icon}
+			alt=""
+			class="size-4 shrink-0 object-contain"
+			loading="lazy"
+			decoding="async"
+		/>
+		<span>{category.label[locale]}</span>
+	</span>
+))}

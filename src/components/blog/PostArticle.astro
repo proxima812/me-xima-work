@@ -1,12 +1,17 @@
 ---
 import { Image } from "astro:assets";
 import { type CollectionEntry, render } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { Icon } from "astro-icon/components";
+import CategoryTags from "@/components/blog/CategoryTags.astro";
 import CodeBlock from "@/components/blog/CodeBlock.astro";
 import Comments from "@/components/blog/Comments.astro";
 import PostImage from "@/components/blog/PostImage.astro";
 import PostLink from "@/components/blog/PostLink.astro";
 import PostTable from "@/components/blog/PostTable.astro";
-import BackLink from "@/components/ui/BackLink.astro";
+import ScrollProgressIndicator from "@/components/blog/ScrollProgressIndicator.astro";
+import TableOfContents from "@/components/blog/TableOfContents.astro";
+import Breadcrumbs from "@/components/ui/Breadcrumbs.astro";
 import PageTitle from "@/components/ui/PageTitle.astro";
 import type { LocaleCode } from "@/config/types";
 import { useTranslations } from "@/i18n";
@@ -19,9 +24,18 @@ export interface Props {
 
 const { post, locale } = Astro.props;
 const { title, pubDate, cover, coverAlt } = post.data;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 const t = useTranslations(locale);
 const categories = getPostCategories(post);
+const tocHeadings = headings.filter(
+	(heading) => heading.depth === 2 || heading.depth === 3,
+);
+const hasTableOfContents = tocHeadings.length >= 3;
+const breadcrumbItems = [
+	{ label: t("nav.home"), href: getRelativeLocaleUrl(locale, "") },
+	{ label: t("nav.articles"), href: getRelativeLocaleUrl(locale, "articles") },
+	{ label: title },
+];
 
 const formattedDate = new Intl.DateTimeFormat(locale, {
 	dateStyle: "long",
@@ -34,25 +48,22 @@ const readingMinutes = Math.max(1, Math.round(wordCount / 200));
 const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 ---
 
-<article class="flex w-full flex-col gap-8 select-text">
+<article class="flex min-w-0 w-full flex-col gap-8 select-text">
 	<div class="flex flex-col gap-4">
-		<BackLink locale={locale} />
+		<Breadcrumbs items={breadcrumbItems} label={t("nav.breadcrumbs")} />
 
 		<p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-			{categories.map((category) => (
-					<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
-						<img
-							src={category.icon}
-							alt=""
-							class="h-4 w-4"
-							loading="lazy"
-							decoding="async"
-						/>
-						<span>{category.label[locale]}</span>
-					</span>
-				))}
+			<CategoryTags categories={categories} locale={locale} />
 			<span aria-hidden="true">&middot;</span>
-			<time datetime={pubDate.toISOString()}>{formattedDate}</time>
+			<time
+				class="inline-flex items-center gap-1.5"
+				datetime={pubDate.toISOString()}
+				><Icon
+					name="mdi:calendar-blank-outline"
+					class="size-4 shrink-0"
+					aria-hidden="true"
+				/>{formattedDate}</time
+			>
 			<span aria-hidden="true">&middot;</span>
 			<span>{readingMinutes} {t("article.readingTime")}</span>
 		</p>
@@ -63,20 +74,42 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 	<Image
 		src={cover}
 		alt={coverAlt}
-		class="wide-breakout aspect-video rounded-lg object-cover"
+		class:list={[
+			"w-full h-auto rounded-2xl border border-border",
+			cover.format === "svg" && "bg-media",
+		]}
 	/>
 
-	<div class="post-content flex flex-col gap-6">
-		<Content
-			components={{
-				a: PostLink,
-				img: PostImage,
-				pre: CodeBlock,
-				table: PostTable,
-			}}
-		/>
+	<div
+		class:list={[
+			"grid items-start gap-10",
+			hasTableOfContents && "lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-12",
+		]}
+	>
+		<div class="post-content min-w-0 flex flex-col gap-8 wrap-anywhere">
+			<Content
+				components={{
+					a: PostLink,
+					img: PostImage,
+					pre: CodeBlock,
+					table: PostTable,
+				}}
+			/>
+		</div>
+
+		{hasTableOfContents && (
+				<TableOfContents
+					headings={tocHeadings}
+					label={t("article.toc")}
+					class="order-first lg:order-none lg:col-start-2 lg:row-start-1"
+				/>
+			)}
 	</div>
 </article>
+
+{hasTableOfContents && (
+		<ScrollProgressIndicator headings={tocHeadings} label={t("article.progress")} />
+	)}
 
 <Comments locale={locale} />
 
@@ -90,11 +123,11 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
  * тегам компонент-обертка ничего не добавляет.
  */
 .post-content :global(h2) {
-	@apply text-3xl font-bold tracking-tight text-balance;
+	@apply scroll-mt-24 text-3xl font-bold tracking-tight text-balance;
 }
 
 .post-content :global(h3) {
-	@apply text-2xl font-bold tracking-tight text-balance;
+	@apply scroll-mt-24 text-2xl font-bold tracking-tight text-balance;
 }
 
 .post-content :global(h4) {
@@ -111,7 +144,7 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 
 /* Всегда крупный, "prose-lg" масштаб текста поста. */
 .post-content :global(p) {
-	@apply text-lg leading-relaxed;
+	@apply text-lg leading-8;
 }
 
 .post-content :global(a) {
@@ -223,17 +256,13 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 	@apply border-border;
 }
 
-/*
- * Таблица выходит за колонку текста только с `sm`. На мобильном вынос дал бы
- * ширину во весь вьюпорт, то есть рамку впритык к краям экрана; там таблица
- * остается в колонке и прокручивается внутри себя.
- */
+/* Таблица прокручивается внутри колонки, не перекрывая оглавление. */
 .post-content :global(.post-table) {
-	@apply overflow-x-auto rounded-lg border border-border sm:wide-breakout;
+	@apply w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-border;
 }
 
 .post-content :global(table) {
-	@apply w-full border-collapse text-left text-sm;
+	@apply w-full border-collapse text-left text-sm leading-relaxed;
 }
 
 .post-content :global(th) {
@@ -245,7 +274,7 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 }
 
 .post-content :global(img) {
-	@apply wide-breakout rounded-lg border border-border object-cover;
+	@apply block h-auto max-w-full rounded-xl border border-border;
 }
 
 .post-content :global(.link-preview) {
@@ -293,17 +322,13 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 	@apply text-center text-sm text-balance text-muted-foreground;
 }
 
-/*
- * Сетка иллюстраций. `wide-breakout` живет на самой сетке, поэтому у
- * картинок внутри его нужно снять - иначе каждая из них уходит в ширину
- * вьюпорта и сетка рассыпается.
- */
+/* Иллюстрации сохраняют пропорции и ширину своей ячейки. */
 .post-content :global(.post-gallery) {
-	@apply wide-breakout grid gap-4;
+	@apply grid min-w-0 gap-4;
 }
 
 .post-content :global(.post-gallery img) {
-	@apply aspect-video;
+	@apply h-auto object-contain;
 	width: 100%;
 	max-width: 100%;
 	margin-inline: 0;

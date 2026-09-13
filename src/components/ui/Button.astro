@@ -2,28 +2,35 @@
 import { cn } from "@/utils/lib/cn";
 
 export interface Props {
-	href: string;
+	href?: string;
 	/** primary - основное действие, secondary - все остальное. */
-	variant?: "primary" | "secondary";
+	variant?: "primary" | "secondary" | "outline";
+	type?: "button" | "submit" | "reset";
 	class?: string;
 }
 
-const { href, variant = "primary", class: className } = Astro.props;
+const {
+	href,
+	variant = "primary",
+	type = "button",
+	class: className,
+} = Astro.props;
 
 const VARIANTS = {
-	primary: "bg-primary text-primary-foreground",
-	secondary: "bg-secondary text-secondary-foreground",
+	primary:
+		"border border-primary-border bg-primary text-primary-foreground hover:bg-foreground/90",
+	secondary: "border border-border bg-secondary text-secondary-foreground",
+	outline:
+		"border border-primary-border bg-background text-foreground hover:bg-primary hover:text-primary-foreground",
 } as const;
 ---
 
-<!-- biome-ignore lint/a11y/useAnchorContent: содержимое приходит через <slot /> -->
-<a
-	href={href}
-	class={cn(
-		"inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium transition hover:opacity-90",
-		VARIANTS[variant],
-		className,
-	)}
->
-	<slot />
-</a>
+{href ? (
+	<a href={href} class={cn("inline-flex h-9 items-center justify-center rounded-lg px-5.5 text-sm font-medium transition-colors", VARIANTS[variant], className)}>
+		<slot />
+	</a>
+) : (
+	<button type={type} class={cn("inline-flex h-9 items-center justify-center rounded-lg px-5.5 text-sm font-medium transition-colors", VARIANTS[variant], className)}>
+		<slot />
+	</button>
+)}

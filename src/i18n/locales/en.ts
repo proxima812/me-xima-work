@@ -7,10 +7,13 @@ export default {
 
 	"home.heading": "I have something to say",
 	"home.switcher": "Русский",
-	"home.cta.articles": "All articles/posts",
-	"home.cta.projects": "Projects",
+	"home.cta.articles": "All articles & posts",
 
 	"nav.back": "Back to home",
+	"nav.home": "Home",
+	"nav.articles": "Articles",
+	"nav.categories": "Categories",
+	"nav.breadcrumbs": "Breadcrumbs",
 
 	"articles.title": "Articles",
 	"articles.description": "All blog articles, newest first.",
@@ -21,6 +24,8 @@ export default {
 	"articleCategories.count": "posts",
 
 	"article.readingTime": "min read",
+	"article.toc": "Contents",
+	"article.progress": "Reading progress",
 	"article.code.copy": "Copy code",
 	"article.code.copied": "Copied",
 	"article.code.open": "Open",
@@ -28,8 +33,6 @@ export default {
 
 	"comments.label": "Comments",
 
-	"projects.title": "Projects",
-	"projects.description": "Links to my projects.",
 	"projects.code": "code",
 
 	"notFound.title": "404 - page not found",

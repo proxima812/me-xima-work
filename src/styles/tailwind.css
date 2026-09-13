@@ -26,9 +26,10 @@
 	/* Основной брендовый цвет: кнопки, ссылки, ключевые акценты */
 	--color-primary: oklch(0.17 0 0);
 	--color-primary-foreground: oklch(0.98 0 0);
+	--color-primary-border: oklch(0.17 0 0);
 
 	/* Вторичные действия */
-	--color-secondary: oklch(0.9 0 0);
+	--color-secondary: oklch(1 0 0);
 	--color-secondary-foreground: oklch(0.17 0 0);
 
 	/* Приглушенные поверхности: карточки, disabled, вторичный UI */
@@ -37,6 +38,10 @@
 
 	/* Границы и focus ring */
 	--color-border: oklch(0.87 0 0);
+
+	/* Поверхность для SVG-обложек с прозрачными областями */
+	--color-media: oklch(1 0 0);
+	--color-media-foreground: oklch(0.17 0 0);
 }
 
 /*

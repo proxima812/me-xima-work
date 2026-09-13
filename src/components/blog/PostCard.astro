@@ -2,6 +2,8 @@
 import { Image } from "astro:assets";
 import type { CollectionEntry } from "astro:content";
 import { getRelativeLocaleUrl } from "astro:i18n";
+import { Icon } from "astro-icon/components";
+import CategoryTags from "@/components/blog/CategoryTags.astro";
 import type { LocaleCode } from "@/config/types";
 import { getPostCategories, getPostSlug } from "@/utils/blog";
 
@@ -20,44 +22,48 @@ const formattedDate = new Intl.DateTimeFormat(locale, {
 }).format(pubDate);
 ---
 
-<article class="h-full">
+<article
+	class="relative isolate h-full pb-2 before:absolute before:inset-x-3 before:bottom-0 before:top-5 before:-z-10 before:rounded-2xl before:border before:border-border before:bg-muted"
+>
 	<a
-		class="group flex h-full flex-col gap-4"
+		class="group flex h-full flex-col rounded-2xl border border-border bg-secondary p-2 text-secondary-foreground shadow-sm transition-shadow hover:shadow-lg focus-visible:outline-offset-4"
 		href={getRelativeLocaleUrl(locale, `articles/${slug}`)}
 	>
 		<Image
 			src={cover}
 			alt={coverAlt}
-			class="aspect-video w-full rounded-lg object-cover transition-opacity group-hover:opacity-90"
+			class:list={[
+				"aspect-video w-full rounded-xl object-cover",
+				cover.format === "svg" && "bg-media",
+			]}
 		/>
 
-		<div class="flex flex-1 flex-col gap-2">
+		<div class="flex flex-1 flex-col gap-3 p-4">
 			<div class="flex flex-col gap-1.5 text-sm text-muted-foreground">
-				<div class="flex flex-wrap items-center gap-2">
-					{categories.map((category) => (
-							<span class="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2 py-0.5 font-medium">
-								<img
-									src={category.icon}
-									alt=""
-									class="h-4 w-4"
-									loading="lazy"
-									decoding="async"
-								/>
-								<span>{category.label[locale]}</span>
-							</span>
-						))}
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+					<CategoryTags categories={categories} locale={locale} />
 				</div>
 
-				<time datetime={pubDate.toISOString()}>{formattedDate}</time>
+				<time
+					class="inline-flex items-center gap-1.5"
+					datetime={pubDate.toISOString()}
+				>
+					<Icon
+						name="mdi:calendar-blank-outline"
+						class="size-4 shrink-0"
+						aria-hidden="true"
+					/>
+					{formattedDate}
+				</time>
 			</div>
 
 			<h3
-				class="line-clamp-2 min-h-14 text-xl font-bold text-balance decoration-border underline-offset-4 group-hover:underline"
+				class="line-clamp-2 text-xl font-bold text-balance decoration-border underline-offset-4 group-hover:underline"
 			>
 				{title}
 			</h3>
 
-			<p class="line-clamp-3 flex-1 text-muted-foreground">{description}</p>
+			<p class="line-clamp-3 flex-1 text-muted-foreground/80">{description}</p>
 		</div>
 	</a>
 </article>

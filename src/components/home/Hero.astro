@@ -46,12 +46,17 @@ const postsCount = posts.length;
 	<PageTitle class="max-w-2xl">{t("home.heading")}</PageTitle>
 
 	<div class="flex flex-wrap items-center justify-center gap-3">
-		<Button href={getRelativeLocaleUrl(locale, "articles")}>
+		<Button
+			href={getRelativeLocaleUrl(locale, "articles")}
+			class="relative overflow-visible pr-8"
+		>
 			{t("home.cta.articles")}
-			({postsCount})
-		</Button>
-		<Button href={getRelativeLocaleUrl(locale, "projects")} variant="secondary">
-			{t("home.cta.projects")}
+			<span
+				class="absolute -top-2 -right-2 inline-flex size-7 items-center justify-center rounded-full border-2 border-background bg-primary text-xs font-bold leading-none text-primary-foreground"
+				aria-label={`${postsCount}`}
+			>
+				{postsCount}
+			</span>
 		</Button>
 		<Button
 			href={getRelativeLocaleUrl(locale, "articles/categories")}

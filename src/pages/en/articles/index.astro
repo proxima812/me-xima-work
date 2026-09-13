@@ -1,7 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import PostGrid from "@/components/blog/PostGrid.astro";
-import BackLink from "@/components/ui/BackLink.astro";
+import Breadcrumbs from "@/components/ui/Breadcrumbs.astro";
 import PageTitle from "@/components/ui/PageTitle.astro";
 import { buildAlternates, useTranslations } from "@/i18n";
 import Layout from "@/layouts/Layout.astro";
@@ -17,13 +17,19 @@ const t = useTranslations("en");
 	alternates={buildAlternates(Astro.url.pathname)}
 >
 	<div class="flex flex-col gap-3">
-		<BackLink locale="en" />
+		<Breadcrumbs
+			items={[
+				{ label: t("nav.home"), href: getRelativeLocaleUrl("en", "") },
+				{ label: t("nav.articles") },
+			]}
+			label={t("nav.breadcrumbs")}
+		/>
 
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<PageTitle>{t("articles.title")}</PageTitle>
 			<a
 				href={getRelativeLocaleUrl("en", "articles/categories")}
-				class="inline-flex items-center rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-background"
+				class="inline-flex min-h-10 items-center justify-center rounded-md border border-border bg-secondary px-3 py-1.5 text-center text-sm font-medium leading-none text-secondary-foreground transition-colors hover:bg-muted"
 			>
 				{t("articles.categories")}
 			</a>

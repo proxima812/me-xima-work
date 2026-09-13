@@ -11,18 +11,19 @@ const { locale, countLabel } = Astro.props;
 const stats = await getCategoryStats(locale);
 ---
 
-<div class="grid gap-3 sm:grid-cols-2">
-	{stats.map(({ category, count }) => (
-			<div class="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted px-4 py-3">
+<div class="grid border-t border-border sm:grid-cols-2">
+	{
+		stats.map(({ category, count }) => (
+			<div class="flex min-h-16 items-center justify-between gap-4 border-b border-border py-3 sm:odd:pr-6 sm:even:border-l sm:even:pl-6">
 				<div class="flex min-w-0 items-center gap-3">
 					<img
 						src={category.icon}
 						alt=""
-						class="h-7 w-7 shrink-0"
+						class="size-6 shrink-0 object-contain"
 						loading="lazy"
 						decoding="async"
 					/>
-					<span class="truncate font-medium text-foreground">
+					<span class="truncate font-medium leading-none text-foreground">
 						{category.label[locale]}
 					</span>
 				</div>
@@ -30,5 +31,6 @@ const stats = await getCategoryStats(locale);
 					{count} {countLabel}
 				</span>
 			</div>
-		))}
+		))
+	}
 </div>
