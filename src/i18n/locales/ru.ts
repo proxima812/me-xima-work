@@ -39,4 +39,56 @@ export default {
 	"notFound.description":
 		"Страница не найдена. Возможно, она была удалена или перемещена.",
 	"notFound.heading": "Ошибка 404 - такой страницы не существует",
+
+	"site.author": "proxima812",
+	"site.skip": "Перейти к содержимому",
+	"site.github": "proxima812 на GitHub",
+	"site.copyright": "Все права защищены.",
+
+	"header.home": "xima.work - на главную",
+	"header.menu.open": "Открыть меню",
+	"header.menu.close": "Закрыть меню",
+	"header.menu": "Меню",
+	"header.cta": "Читать блог",
+	"header.categories.all": "Все категории",
+	"header.language": "English",
+	"header.projects": "Проекты",
+
+	"theme.label": "Тема",
+	"theme.light": "Светлая",
+	"theme.dark": "Темная",
+	"theme.system": "Системная",
+
+	"footer.directory": "Карта сайта",
+	"footer.social": "Соцсети",
+	"footer.blog": "Блог",
+	"footer.categories": "Категории",
+	"footer.projects": "Проекты",
+	"footer.links": "Ссылки",
+
+	"preloader.words": "Привет|Hello|Сәлем|Hola|Ciao|やあ|Hallå|Guten Tag",
+
+	"home.line1.before": "У меня",
+	"home.line1.after": "есть,",
+	"home.line2.before": "что",
+	"home.line2.after": "сказать.",
+	"home.cta.categories": "Категории",
+	"home.latest": "Последние посты",
+	"home.all": "Все посты",
+
+	"blog.eyebrow": "Блог",
+	"blog.heading.top": "Заметки и разборы.",
+	"blog.heading.bottom": "Код, дизайн и ИИ.",
+	"blog.latest": "Последние посты",
+	"blog.filter": "Категории",
+	"blog.filter.all": "Все",
+	"blog.empty": "В этой категории пока нет постов.",
+
+	"article.related": "Похожие посты",
+	"article.onThisPage": "На этой странице",
+
+	"cta.top": "Пишу про то,",
+	"cta.bottom": "что делаю сам.",
+	"cta.primary": "Все статьи",
+	"cta.secondary": "Код на GitHub",
 } satisfies Dictionary;

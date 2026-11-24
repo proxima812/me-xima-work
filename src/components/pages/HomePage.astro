@@ -1,0 +1,47 @@
+---
+/**
+ * Главная - общая для всех локалей: страницы `src/pages/**` только
+ * передают локаль и SEO.
+ */
+import BlogHeading from "@/components/blog/BlogHeading";
+import BlogPosts from "@/components/blog/BlogPosts";
+import ClosingCta from "@/components/blog/ClosingCta";
+import Hero from "@/components/home/Hero";
+import type { LocaleCode } from "@/config/types";
+import { localeHref, useTranslations } from "@/i18n/client";
+import { getCategoryStats, getPosts } from "@/utils/blog";
+import { toPostCards } from "@/utils/postCards";
+
+interface Props {
+	locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const posts = await toPostCards((await getPosts(locale)).slice(0, 8), locale);
+const icons = (await getCategoryStats(locale))
+	.toSorted((a, b) => b.count - a.count)
+	.slice(0, 8)
+	.map(({ category }) => category.icon);
+---
+
+<Hero client:load locale={locale} icons={icons} lead={t("meta.description")} />
+
+<section class="site-container section-gap">
+	<BlogHeading
+		as="h2"
+		eyebrow={t("blog.eyebrow")}
+		top={t("blog.heading.top")}
+		bottom={t("blog.heading.bottom")}
+	/>
+	<BlogPosts
+		client:load
+		locale={locale}
+		posts={posts}
+		author={t("site.author")}
+		limit={6}
+		moreHref={localeHref(locale, "articles")}
+	/>
+</section>
+
+<ClosingCta client:visible locale={locale} githubUrl="https://github.com/proxima812" />

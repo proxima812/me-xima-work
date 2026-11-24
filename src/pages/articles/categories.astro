@@ -1,8 +1,5 @@
 ---
-import { getRelativeLocaleUrl } from "astro:i18n";
-import CategoryButtons from "@/components/blog/CategoryButtons.astro";
-import Breadcrumbs from "@/components/ui/Breadcrumbs.astro";
-import PageTitle from "@/components/ui/PageTitle.astro";
+import CategoriesPage from "@/components/pages/CategoriesPage.astro";
 import { buildAlternates, useTranslations } from "@/i18n";
 import Layout from "@/layouts/Layout.astro";
 
@@ -14,24 +11,6 @@ const t = useTranslations("ru");
 	description={t("articleCategories.description")}
 	htmlLang="ru"
 	alternates={buildAlternates(Astro.url.pathname)}
-	class="max-w-4xl"
-	gap="gap-8"
 >
-	<div class="flex flex-col gap-3">
-		<Breadcrumbs
-			items={[
-				{ label: t("nav.home"), href: getRelativeLocaleUrl("ru", "") },
-				{ label: t("nav.articles"), href: getRelativeLocaleUrl("ru", "articles") },
-				{ label: t("nav.categories") },
-			]}
-			label={t("nav.breadcrumbs")}
-		/>
-
-		<PageTitle>{t("articleCategories.title")}</PageTitle>
-		<p class="max-w-2xl text-muted-foreground">
-			{t("articleCategories.description")}
-		</p>
-	</div>
-
-	<CategoryButtons locale="ru" countLabel={t("articleCategories.count")} />
+	<CategoriesPage locale="ru" />
 </Layout>

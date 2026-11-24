@@ -1,5 +1,9 @@
 ---
-import { LinkPreview as AstroEmbedLinkPreview } from "@astro-community/astro-embed-link-preview";
+/**
+ * Карточка-ссылка с Open Graph данными сайта. Если сайт не ответил,
+ * карточка строится из `title` и `description`, переданных в MDX.
+ */
+import { getOpenGraph } from "@/utils/openGraph";
 
 export interface Props {
 	readonly id: string;
@@ -9,21 +13,81 @@ export interface Props {
 }
 
 const { id, title, description, hideMedia = false } = Astro.props;
-const displayTitle = title ?? id;
-const domain = new URL(id).hostname.replace(/^www\./, "");
+
+const meta = await getOpenGraph(id);
+const displayTitle = meta?.title || title || id;
+const displayDescription = meta?.description || description;
+const image = hideMedia ? undefined : meta?.image;
+const domain = new URL(meta?.url ?? id).hostname.replace(/^www\./, "");
 ---
 
-<AstroEmbedLinkPreview id={id} hideMedia={hideMedia} />
-<article
-	class="link-preview link-preview-fallback link-preview--fallback link-preview--no-media"
->
+<article class:list={["link-preview", { "link-preview--no-media": !image }]}>
 	<div class="link-preview__content">
 		<header>
 			<a class="link-preview__title" href={id}>{displayTitle}</a>
 			<small class="link-preview__domain">{domain}</small>
 		</header>
-		{description && (
-			<small class="link-preview__description">{description}</small>
+		{displayDescription && (
+			<small class="link-preview__description">{displayDescription}</small>
 		)}
 	</div>
+	{image && (
+		<img
+			src={image}
+			alt={meta?.imageAlt ?? ""}
+			width="1200"
+			height="630"
+			loading="lazy"
+			decoding="async"
+		/>
+	)}
 </article>
+
+<style>
+	.link-preview {
+		--lp-width: var(--link-preview-width, 30em);
+		--lp-pad-x: var(--link-preview-padding-inline, 0);
+		--lp-pad-y: var(--link-preview-padding-block, 0.5em);
+		--lp-corners: var(--link-preview-corners, 0);
+		--lp-desc-lines: var(--link-preview-description-lines, 1);
+
+		position: relative;
+		width: var(--lp-width);
+		max-width: 100%;
+		display: flex;
+		flex-direction: column-reverse;
+		border-radius: var(--lp-corners);
+	}
+	.link-preview * {
+		margin: 0 !important;
+	}
+	.link-preview__content {
+		display: flex;
+		flex-direction: column;
+		padding: var(--lp-pad-y) var(--lp-pad-x);
+	}
+	.link-preview header {
+		display: flex;
+		flex-direction: column-reverse;
+	}
+	.link-preview__description {
+		display: -webkit-box;
+		-webkit-line-clamp: var(--lp-desc-lines);
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.link-preview a::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+	}
+	.link-preview img {
+		aspect-ratio: 1200 / 630;
+		width: 100%;
+		height: auto;
+		object-fit: cover;
+		border-top-left-radius: var(--lp-corners);
+		border-top-right-radius: var(--lp-corners);
+	}
+</style>

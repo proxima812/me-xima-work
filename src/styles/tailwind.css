@@ -3,93 +3,407 @@
 @plugin "@toolwind/corner-shape";
 
 /*
- * Семантические токены. Правило одно: цвета ходят парами
- * «поверхность + текст на ней», и в разметке используется пара целиком.
- *
- *   bg-background  → text-foreground          (страница)
- *   bg-primary     → text-primary-foreground  (акценты, кнопки)
- *   bg-secondary   → text-secondary-foreground
- *   bg-muted       → text-muted-foreground    (карточки, вторичный UI)
- *
- * Перекрасить проект = поменять значения здесь. Хардкодить цвета
- * (`bg-[#111]`, `text-zinc-900`) в компонентах не нужно.
+ * Темы переключаются классом на <html>: `light` / `dark`. Скрипт в `<head>`
+ * (`Layout.astro`) ставит класс до первой отрисовки, без вспышки.
  */
-@theme {
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Палитра повторяет heroui.com. Правило прежнее: цвета ходят парами
+ * «поверхность + текст на ней».
+ *
+ *   bg-background → text-foreground  (страница)
+ *   bg-surface    → text-foreground  (карточки)
+ *   bg-default    → text-foreground  (третичные кнопки, трек сегмента)
+ *   text-muted                       (вторичный текст)
+ */
+:root,
+.light {
+	--background: #f5f5f5;
+	--foreground: #18181b;
+	--surface: #ffffff;
+	--surface-secondary: #efeff0;
+	--overlay: #ffffff;
+	--muted: #71717a;
+	--default: #ebebec;
+	--border: #dedee0;
+	--separator: #e4e4e7;
+	--accent: #0485f7;
+	--accent-foreground: #fcfcfc;
+	--segment: #ffffff;
+	--surface-shadow:
+		0 2px 4px 0 #0000000a, 0 1px 2px 0 #0000000f, 0 0 1px 0 #0000000f;
+	--overlay-shadow:
+		0 2px 8px 0 #0000000f, 0 -6px 12px 0 #00000008, 0 14px 28px 0 #00000014;
+	--code-bg: #0000000a;
+	color-scheme: light;
+}
+
+.dark {
+	--background: #060607;
+	--foreground: #fcfcfc;
+	--surface: #18181b;
+	--surface-secondary: #232325;
+	--overlay: #18181b;
+	--muted: #9f9fa9;
+	--default: #27272a;
+	--border: #28282c;
+	--separator: #212124;
+	--segment: #46464c;
+	--surface-shadow: 0 0 0 0 transparent inset;
+	--overlay-shadow: 0 0 1px 0 #ffffff4d inset;
+	--code-bg: #28282866;
+	color-scheme: dark;
+}
+
+@theme inline {
 	--font-sans:
 		var(--font-inter), ui-sans-serif, system-ui, sans-serif,
 		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--font-heading: var(--font-geist), var(--font-inter), ui-sans-serif, sans-serif;
 
-	/* Страница */
-	--color-background: oklch(0.98 0 0);
-	--color-foreground: oklch(0.17 0 0);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-surface: var(--surface);
+	--color-surface-secondary: var(--surface-secondary);
+	--color-overlay: var(--overlay);
+	--color-muted: var(--muted);
+	--color-default: var(--default);
+	--color-border: var(--border);
+	--color-separator: var(--separator);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-segment: var(--segment);
 
-	/* Основной брендовый цвет: кнопки, ссылки, ключевые акценты */
-	--color-primary: oklch(0.17 0 0);
-	--color-primary-foreground: oklch(0.98 0 0);
-	--color-primary-border: oklch(0.17 0 0);
+	--shadow-surface: var(--surface-shadow);
+	--shadow-overlay: var(--overlay-shadow);
 
-	/* Вторичные действия */
-	--color-secondary: oklch(1 0 0);
-	--color-secondary-foreground: oklch(0.17 0 0);
-
-	/* Приглушенные поверхности: карточки, disabled, вторичный UI */
-	--color-muted: oklch(0.92 0 0);
-	--color-muted-foreground: oklch(0.45 0 0);
-
-	/* Границы и focus ring */
-	--color-border: oklch(0.87 0 0);
-
-	/* Поверхность для SVG-обложек с прозрачными областями */
-	--color-media: oklch(1 0 0);
-	--color-media-foreground: oklch(0.17 0 0);
+	--ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+	--ease-menu: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/*
- * Preflight Tailwind v4 уже делает reset (box-sizing, margin/padding, border,
- * text-size-adjust, font-family). Дублировать его не нужно - здесь только то,
- * чего в Preflight нет.
- */
 @layer base {
 	html {
 		@apply motion-safe:scroll-smooth;
+		scroll-padding-top: 6rem;
 		tab-size: 4;
 		-webkit-tap-highlight-color: transparent;
 	}
 
-	html,
 	body {
-		@apply flex min-h-screen min-w-80 flex-col bg-background font-sans text-foreground antialiased md:subpixel-antialiased;
+		@apply flex min-h-svh min-w-80 flex-col bg-background font-sans text-foreground antialiased;
 	}
 
 	/*
 	 * Интерфейс не выделяется: заголовки, кнопки, мета-строки. Выделять имеет
-	 * смысл то, что читают и копируют, - и это включается точечно классом
-	 * `select-text`: тело статьи и строки на странице проектов.
+	 * смысл то, что читают и копируют, - это включается классом `select-text`.
 	 */
 	body {
 		@apply select-none;
 	}
 
-	/* Единый фокус для всего интерактива: ссылки, кнопки, поля. */
+	::selection {
+		background: color-mix(in oklab, var(--accent) 22%, transparent);
+	}
+
 	:focus-visible {
-		@apply outline-2 outline-offset-2 outline-foreground;
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+		border-radius: 6px;
 	}
 }
 
-@utility no-container {
-	@apply relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw];
+@utility site-container {
+	width: 100%;
+	max-width: 75rem;
+	padding-inline: 1.25rem;
+	margin-inline: auto;
+
+	@media (width >= 40rem) {
+		padding-inline: 1.5rem;
+	}
+}
+
+@utility display-hero {
+	font-family: var(--font-heading);
+	font-weight: 500;
+	letter-spacing: -0.022em;
+	font-size: clamp(2rem, 9.6vw, 5rem);
+	line-height: 1;
+
+	@media (width < 40rem) {
+		font-size: 11.25vw;
+		line-height: 1.05;
+	}
+}
+
+@utility display-statement {
+	font-family: var(--font-heading);
+	font-weight: 500;
+	text-wrap: balance;
+	letter-spacing: -0.72px;
+	font-size: 2.25rem;
+	line-height: normal;
+
+	@media (width < 40rem) {
+		letter-spacing: -0.02em;
+		font-size: 2.125rem;
+		line-height: 38px;
+	}
+
+	@media (width >= 48rem) {
+		font-size: 3rem;
+	}
+}
+
+@utility display-closing {
+	font-family: var(--font-heading);
+	font-weight: 500;
+	text-wrap: balance;
+	letter-spacing: -0.02em;
+	font-size: clamp(2.5rem, 7.4vw, 4rem);
+	line-height: 1;
+}
+
+@utility lead {
+	font-size: 1rem;
+	line-height: 1.5;
+	text-wrap: pretty;
+	color: var(--muted);
+}
+
+@utility section-gap {
+	margin-top: 72px;
+
+	@media (width >= 40rem) {
+		margin-top: 10rem;
+	}
+}
+
+/* Кнопки HeroUI: пилюля, нажатие сжимает до 0.97. */
+@utility button {
+	isolation: isolate;
+	position: relative;
+	display: inline-flex;
+	height: 2.5rem;
+	width: fit-content;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border-radius: 1.5rem;
+	padding-inline: 1rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	font-weight: 500;
+	white-space: nowrap;
+	user-select: none;
+	cursor: pointer;
+	transform-origin: 50%;
+	background-color: var(--button-bg, transparent);
+	color: var(--button-fg, currentColor);
+	transition:
+		transform 0.25s ease,
+		background-color 0.1s cubic-bezier(0, 0, 0.2, 1),
+		box-shadow 0.1s cubic-bezier(0, 0, 0.2, 1);
+
+	@media (width >= 48rem) {
+		height: 2.25rem;
+	}
+
+	@media (hover: hover) {
+		&:hover {
+			background-color: var(--button-bg-hover, var(--button-bg));
+		}
+	}
+
+	&:active {
+		background-color: var(--button-bg-pressed, var(--button-bg-hover));
+		transform: scale(0.97);
+	}
+
+	&:focus-visible {
+		outline: none;
+		border-radius: 1.5rem;
+		box-shadow:
+			0 0 0 2px var(--background),
+			0 0 0 4px var(--accent);
+	}
+
+	& svg {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+}
+
+@utility button-primary {
+	--button-bg: var(--foreground);
+	--button-bg-hover: color-mix(in oklab, var(--foreground) 86%, var(--background));
+	--button-bg-pressed: color-mix(in oklab, var(--foreground) 80%, var(--background));
+	--button-fg: var(--background);
+}
+
+@utility button-tertiary {
+	--button-bg: var(--default);
+	--button-bg-hover: color-mix(in oklab, var(--default) 96%, var(--foreground) 4%);
+	--button-fg: var(--foreground);
+}
+
+@utility button-ghost {
+	--button-bg: transparent;
+	--button-bg-hover: var(--default);
+	--button-bg-pressed: var(--default);
+	--button-fg: var(--foreground);
+}
+
+@utility button-icon {
+	width: 2.5rem;
+	padding: 0;
+
+	@media (width >= 48rem) {
+		width: 2.25rem;
+	}
 }
 
 /*
- * Раскрывает элемент до max-w-5xl независимо от того, насколько узкий
- * родитель (например max-w-4xl у страницы поста). В отличие от no-container
- * не идет в 100vw всегда - на широких экранах упирается в 5xl и остается
- * отцентрованным по вьюпорту.
+ * Появление как на heroui.com: блок выплывает из размытия на 12px вверх.
+ * Пока на экране прелоадер (`html.preloading`), анимация стоит на паузе
+ * и стартует, когда шторка уезжает.
  */
-@utility wide-breakout {
-	/* Preflight ставит `img,video{max-width:100%}` - без сброса ширина ниже
-	   зажимается им обратно до 100% родителя. */
-	max-width: none;
-	width: min(100vw, var(--container-5xl));
-	margin-inline: calc((100% - min(100vw, var(--container-5xl))) / 2);
+@keyframes blur-rise {
+	0% {
+		opacity: 0;
+		filter: blur(8px);
+		transform: translateY(var(--rise, 12px));
+	}
+}
+
+@utility enter {
+	animation: 0.8s both blur-rise;
+	animation-delay: var(--enter-delay, 0s);
+}
+
+html.preloading .enter {
+	animation-play-state: paused;
+}
+
+/* Маска по краям горизонтального скролла (табы категорий на мобильном). */
+@utility scroll-fade-x {
+	mask-image: linear-gradient(
+		90deg,
+		transparent,
+		#000 24px,
+		#000 calc(100% - 56px),
+		transparent
+	);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.enter {
+		animation: none;
+	}
+}
+
+/*
+ * «Слот» в заголовке главной: слова разъезжаются, между ними появляется
+ * плитка с иконкой категории и дальше иконки сменяют друг друга.
+ */
+@keyframes slot-before-open {
+	0% {
+		transform: translate(0.36em);
+	}
+}
+
+@keyframes slot-after-open {
+	0% {
+		transform: translate(-0.36em);
+	}
+}
+
+@keyframes slot-in {
+	0% {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+}
+
+.hero-slot-line {
+	white-space: nowrap;
+}
+
+.hero-slot__before,
+.hero-slot__after {
+	display: inline-block;
+	animation: 0.42s cubic-bezier(0.23, 1, 0.32, 1) both slot-before-open;
+	animation-delay: var(--slot-delay, 0.9s);
+}
+
+.hero-slot__after {
+	animation-name: slot-after-open;
+}
+
+.hero-slot {
+	position: relative;
+	display: inline-block;
+	height: 0.72em;
+	padding-inline: 0.36em;
+	vertical-align: middle;
+	white-space: pre;
+}
+
+.hero-slot__tile {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	width: 0.72em;
+	height: 0.72em;
+	margin-left: -0.36em;
+	padding: 0;
+	border: 0;
+	border-radius: 28%;
+	background: none;
+	cursor: pointer;
+	animation: 0.44s cubic-bezier(0.23, 1, 0.32, 1) both slot-in;
+	animation-delay: calc(var(--slot-delay, 0.9s) + 0.12s);
+}
+
+.hero-slot__layer {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	filter: blur(7px);
+	transform: scale(0.78);
+	transition:
+		opacity 0.42s,
+		filter 0.42s,
+		transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-slot__layer[data-active="true"] {
+	opacity: 1;
+	filter: blur(0);
+	transform: scale(1);
+}
+
+.hero-slot__icon {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	rotate: var(--glyph-rotation);
+	filter: drop-shadow(0 1px 1px #0000001a) drop-shadow(0 3px 6px #00000024);
+}
+
+html.preloading :is(.hero-slot__before, .hero-slot__after, .hero-slot__tile) {
+	animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.hero-slot__before,
+	.hero-slot__after,
+	.hero-slot__tile {
+		animation: none;
+	}
 }

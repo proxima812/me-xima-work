@@ -6,6 +6,8 @@
 			"@/*": ["src/*"]
 		},
 		"allowJs": true,
+		"jsx": "react-jsx",
+		"jsxImportSource": "react",
 		"ignoreDeprecations": "6.0"
 	},
 	"include": [".astro/types.d.ts", "**/*"],

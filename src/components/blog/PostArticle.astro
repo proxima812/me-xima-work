@@ -1,21 +1,25 @@
 ---
-import { Image } from "astro:assets";
+/**
+ * Каркас страницы поста. Astro здесь нужен только там, где без него никак:
+ * `render()` контента MDX и подстановка компонентов в теги. Все видимые
+ * части - React-компоненты.
+ */
 import { type CollectionEntry, render } from "astro:content";
-import { getRelativeLocaleUrl } from "astro:i18n";
-import { Icon } from "astro-icon/components";
-import CategoryTags from "@/components/blog/CategoryTags.astro";
-import CodeBlock from "@/components/blog/CodeBlock.astro";
-import Comments from "@/components/blog/Comments.astro";
-import PostImage from "@/components/blog/PostImage.astro";
-import PostLink from "@/components/blog/PostLink.astro";
-import PostTable from "@/components/blog/PostTable.astro";
-import ScrollProgressIndicator from "@/components/blog/ScrollProgressIndicator.astro";
-import TableOfContents from "@/components/blog/TableOfContents.astro";
-import Breadcrumbs from "@/components/ui/Breadcrumbs.astro";
-import PageTitle from "@/components/ui/PageTitle.astro";
+import { config } from "main.config";
+import ClosingCta from "@/components/blog/ClosingCta";
+import { CodeBlockEn, CodeBlockRu } from "@/components/blog/CodeBlock";
+import Comments from "@/components/blog/Comments";
+import PostHeader from "@/components/blog/PostHeader";
+import PostImage from "@/components/blog/PostImage";
+import PostLink from "@/components/blog/PostLink";
+import PostTable from "@/components/blog/PostTable";
+import RelatedPosts from "@/components/blog/RelatedPosts";
+import ScrollProgress from "@/components/blog/ScrollProgress";
+import TableOfContents from "@/components/blog/TableOfContents";
 import type { LocaleCode } from "@/config/types";
-import { useTranslations } from "@/i18n";
-import { getPostCategories } from "@/utils/blog";
+import { localeHref, useTranslations } from "@/i18n/client";
+import { getPostSlug, getPosts } from "@/utils/blog";
+import { toPostCard, toPostCards } from "@/utils/postCards";
 
 export interface Props {
 	post: CollectionEntry<"blog">;
@@ -23,132 +27,153 @@ export interface Props {
 }
 
 const { post, locale } = Astro.props;
-const { title, pubDate, cover, coverAlt } = post.data;
 const { Content, headings } = await render(post);
 const t = useTranslations(locale);
-const categories = getPostCategories(post);
-const tocHeadings = headings.filter(
-	(heading) => heading.depth === 2 || heading.depth === 3,
-);
+const githubUrl = "https://github.com/proxima812";
+const { comments } = config.site;
+
+const card = await toPostCard(post, locale);
+const tocHeadings = headings
+	.filter((heading) => heading.depth === 2 || heading.depth === 3)
+	.map(({ slug, text, depth }) => ({ slug, text, depth }));
 const hasTableOfContents = tocHeadings.length >= 3;
-const breadcrumbItems = [
-	{ label: t("nav.home"), href: getRelativeLocaleUrl(locale, "") },
-	{ label: t("nav.articles"), href: getRelativeLocaleUrl(locale, "articles") },
-	{ label: title },
-];
 
-const formattedDate = new Intl.DateTimeFormat(locale, {
-	dateStyle: "long",
-}).format(pubDate);
-
-const wordCount = (post.body ?? "").trim().split(/\s+/).filter(Boolean).length;
-const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+// Похожие: сначала посты с общей категорией, добиваем свежими.
+const slug = getPostSlug(post);
+const others = (await getPosts(locale)).filter((other) => getPostSlug(other) !== slug);
+const shared = (other: (typeof others)[number]) =>
+	other.data.categories.filter((id) => post.data.categories.includes(id)).length;
+const related = await toPostCards(
+	others.toSorted((a, b) => shared(b) - shared(a)).slice(0, 3),
+	locale,
+);
 
 /** Абсолютный адрес поста - уходит в промт для ИИ-сервисов. */
 const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const site = Astro.site ?? Astro.url;
+const [firstCategory] = card.categories;
+const breadcrumbSchema = {
+	"@context": "https://schema.org",
+	"@type": "BreadcrumbList",
+	itemListElement: [
+		{ label: t("nav.home"), href: localeHref(locale) },
+		{ label: t("nav.articles"), href: localeHref(locale, "articles") },
+		...(firstCategory
+			? [
+					{
+						label: firstCategory.label,
+						href: `${localeHref(locale, "articles")}?category=${firstCategory.id}`,
+					},
+				]
+			: []),
+		{ label: card.title, href: Astro.url.pathname },
+	].map((item, index) => ({
+		"@type": "ListItem",
+		position: index + 1,
+		name: item.label,
+		item: new URL(item.href, site).href,
+	})),
+};
 ---
 
-<article class="flex min-w-0 w-full flex-col gap-8 select-text">
-	<div class="flex flex-col gap-4">
-		<Breadcrumbs items={breadcrumbItems} label={t("nav.breadcrumbs")} />
-
-		<p class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-			<CategoryTags categories={categories} locale={locale} />
-			<span aria-hidden="true">&middot;</span>
-			<time
-				class="inline-flex items-center gap-1.5"
-				datetime={pubDate.toISOString()}
-				><Icon
-					name="mdi:calendar-blank-outline"
-					class="size-4 shrink-0"
-					aria-hidden="true"
-				/>{formattedDate}</time
-			>
-			<span aria-hidden="true">&middot;</span>
-			<span>{readingMinutes} {t("article.readingTime")}</span>
-		</p>
-
-		<PageTitle>{title}</PageTitle>
-	</div>
-
-	<Image
-		src={cover}
-		alt={coverAlt}
-		class:list={[
-			"w-full h-auto rounded-2xl border border-border",
-			cover.format === "svg" && "bg-media",
-		]}
+<article>
+	<PostHeader
+		client:load
+		locale={locale}
+		post={card}
+		author={t("site.author")}
+		authorUrl={githubUrl}
 	/>
 
 	<div
-		class:list={[
-			"grid items-start gap-10",
-			hasTableOfContents && "lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-12",
-		]}
+		class="site-container mt-10 sm:mt-12 xl:grid xl:grid-cols-[1fr_minmax(0,720px)_1fr] xl:items-start xl:gap-8"
 	>
-		<div class="post-content min-w-0 flex flex-col gap-8 wrap-anywhere">
+		<div
+			class="post-content mx-auto flex max-w-[720px] min-w-0 flex-col gap-5 wrap-anywhere select-text xl:col-start-2 xl:mx-0"
+		>
 			<Content
 				components={{
 					a: PostLink,
 					img: PostImage,
-					pre: CodeBlock,
+					pre: locale === "en" ? CodeBlockEn : CodeBlockRu,
 					table: PostTable,
 				}}
 			/>
 		</div>
 
 		{hasTableOfContents && (
-				<TableOfContents
-					headings={tocHeadings}
-					label={t("article.toc")}
-					class="order-first lg:order-none lg:col-start-2 lg:row-start-1"
-				/>
-			)}
+			<aside class="hidden xl:sticky xl:top-28 xl:col-start-3 xl:block xl:w-[184px]">
+				<TableOfContents client:media="(min-width: 80rem)" headings={tocHeadings} label={t("article.onThisPage")} />
+			</aside>
+		)}
 	</div>
+
+	{comments.enabled && (
+		<div class="site-container mt-16">
+			<div class="mx-auto max-w-[720px]">
+				<Comments
+					client:visible
+					locale={locale}
+					label={t("comments.label")}
+					repo={comments.repo}
+					repoId={comments.repoId}
+					category={comments.category}
+					categoryId={comments.categoryId}
+				/>
+			</div>
+		</div>
+	)}
 </article>
 
-{hasTableOfContents && (
-		<ScrollProgressIndicator headings={tocHeadings} label={t("article.progress")} />
-	)}
+<RelatedPosts
+	client:visible
+	locale={locale}
+	posts={related}
+	author={t("site.author")}
+	heading={t("article.related")}
+/>
 
-<Comments locale={locale} />
+<ClosingCta client:visible locale={locale} githubUrl={githubUrl} />
+
+{hasTableOfContents && (
+	<ScrollProgress client:media="(max-width: 79.99rem)" headings={tocHeadings} label={t("article.progress")} />
+)}
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(breadcrumbSchema)} />
 
 <style>
 @reference "@/styles/tailwind.css";
 
 /*
- * Стили тегов контента - здесь, а не через `prose` из typography-плагина:
- * шкала и цвета берутся из тех же токенов, что и остальной сайт.
- * Компонентами подменяется только `a` (см. `PostLink.astro`) - остальным
- * тегам компонент-обертка ничего не добавляет.
+ * Типографика статьи heroui.com/blog: ритм задает `gap-5` колонки, у абзацев
+ * нет внешних отступов. Заголовки добавляют свой отступ сверху поверх gap.
  */
+.post-content :global(p) {
+	@apply text-base leading-7;
+}
+
 .post-content :global(h2) {
-	@apply scroll-mt-24 text-3xl font-bold tracking-tight text-balance;
+	@apply mt-7 font-heading text-2xl leading-8 font-medium tracking-[-0.01em] text-balance;
 }
 
 .post-content :global(h3) {
-	@apply scroll-mt-24 text-2xl font-bold tracking-tight text-balance;
+	@apply mt-3 font-heading text-xl leading-8 font-medium tracking-[-0.01em] text-balance;
 }
 
 .post-content :global(h4) {
-	@apply text-lg font-semibold tracking-tight text-balance;
+	@apply mt-2 text-lg font-medium text-balance;
 }
 
-.post-content :global(h5) {
-	@apply text-lg font-semibold text-balance;
+.post-content :global(:is(h5, h6)) {
+	@apply text-base font-medium text-muted;
 }
 
-.post-content :global(h6) {
-	@apply text-base font-semibold tracking-wide text-muted-foreground uppercase;
-}
-
-/* Всегда крупный, "prose-lg" масштаб текста поста. */
-.post-content :global(p) {
-	@apply text-lg leading-8;
+.post-content :global(strong) {
+	@apply font-medium;
 }
 
 .post-content :global(a) {
-	@apply font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:decoration-foreground;
+	@apply underline decoration-foreground/25 underline-offset-[3px] transition-colors hover:decoration-foreground;
 }
 
 /*
@@ -156,65 +181,64 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
  * иначе длинная ссылка перестает переноситься по строкам.
  */
 .post-content :global(img.post-link-favicon) {
-	@apply inline-block h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain align-text-bottom;
+	@apply inline-block h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain align-text-bottom shadow-none;
 	margin-inline: 0 0.25rem;
+	padding: 0;
+	background: none;
 }
 
-.post-content :global(blockquote) {
-	@apply flex flex-col gap-2 border-l-2 border-border py-0.5 pl-5 text-muted-foreground italic;
+.post-content :global(:not(pre) > code) {
+	@apply rounded-[5px] border border-separator p-[3px] font-mono text-[0.8125em];
 }
 
-/*
- * На широком экране отступа нет: текст пунктов идет вровень с абзацами, а
- * маркеры выносятся наружу (`list-outside` - дефолт) в поля контейнера.
- * На мобильном поле всего 20px, и вынесенный маркер упирается в край экрана -
- * поэтому там список получает собственный отступ.
- */
 .post-content :global(ul) {
-	@apply list-disc space-y-1.5 ps-6 marker:text-muted-foreground sm:ps-0;
+	@apply flex flex-col gap-2;
+}
+
+.post-content :global(ul > li) {
+	@apply relative pl-5 before:absolute before:top-[11px] before:left-0 before:size-1.5 before:rounded-full before:bg-muted;
 }
 
 .post-content :global(ol) {
-	@apply list-decimal space-y-1.5 ps-6 marker:text-muted-foreground sm:ps-0;
+	@apply flex list-decimal flex-col gap-2 pl-5 marker:text-muted;
 }
 
 .post-content :global(li) {
-	@apply text-lg leading-relaxed;
+	@apply text-base leading-7;
 }
 
-.post-content :global(code) {
-	@apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.875em] text-foreground;
+.post-content :global(li > :is(ul, ol)) {
+	@apply mt-2;
 }
 
-/*
- * Обертка вокруг pre - рисуется скриптом ниже (шапка с языком/кнопками).
- * overflow-hidden - только на .code-block-body (вокруг pre), а не на всем
- * .code-block: иначе он обрезает выпадающее меню «Открыть», которое торчит
- * за пределы блока кода на коротких сниппетах.
- */
+.post-content :global(blockquote) {
+	@apply flex flex-col gap-2 border-l-2 border-separator pl-4 text-muted;
+}
+
+.post-content :global(hr) {
+	@apply my-4 border-separator;
+}
+
+/* Блок кода: подложка 4% черного, кнопки поверх справа сверху. */
 .post-content :global(.code-block) {
-	@apply rounded-lg border border-border;
-}
-
-.post-content :global(.code-block-header) {
-	@apply flex flex-wrap items-center justify-between gap-2 rounded-t-lg border-b border-border bg-muted px-4 py-2;
-}
-
-.post-content :global(.code-block-body) {
-	@apply overflow-hidden rounded-b-lg;
-}
-
-.post-content :global(.code-block-lang) {
-	@apply font-mono text-xs text-muted-foreground uppercase;
+	@apply relative overflow-visible rounded-xl;
+	background: var(--code-bg);
 }
 
 .post-content :global(.code-block-actions) {
-	@apply flex items-center gap-2;
+	@apply absolute top-2.5 right-2 z-[2] flex items-center gap-1;
 }
 
-.post-content :global(.code-block-copy),
+.post-content :global(.code-block-lang) {
+	@apply px-1.5 font-mono text-[11px] text-muted uppercase;
+}
+
+.post-content :global(.code-block-copy) {
+	@apply inline-flex size-7 items-center justify-center rounded-3xl text-muted transition-[color,background-color,scale] hover:bg-default hover:text-foreground active:scale-[0.97];
+}
+
 .post-content :global(.code-block-open-trigger) {
-	@apply inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted;
+	@apply inline-flex h-7 items-center gap-1 rounded-3xl px-2.5 text-xs font-medium text-muted transition-[color,background-color,scale] hover:bg-default hover:text-foreground active:scale-[0.97];
 }
 
 .post-content :global(.code-block-open) {
@@ -222,96 +246,100 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 }
 
 .post-content :global(.code-block-open-menu) {
-	@apply absolute top-full right-0 z-10 mt-1 w-max min-w-48 list-none overflow-hidden rounded-md border border-border bg-background py-1 shadow-lg;
+	@apply absolute top-full right-0 z-10 mt-1 flex w-max min-w-48 list-none flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-overlay p-1 shadow-overlay;
+	animation: code-menu-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes code-menu-in {
+	0% {
+		opacity: 0;
+		transform: scale(0.97) translateY(-2px);
+	}
 }
 
 .post-content :global(.code-block-open-menu[hidden]) {
 	display: none;
 }
 
+.post-content :global(.code-block-open-menu li) {
+	@apply p-0 before:hidden;
+}
+
 .post-content :global(.code-block-open-item) {
-	@apply flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm whitespace-nowrap text-foreground transition-colors hover:bg-muted;
+	@apply flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-sm whitespace-nowrap transition-colors hover:bg-default;
 }
 
-/* Иконка сервиса в пункте меню - как favicon у ProjectLink, без wide-breakout. */
 .post-content :global(img.code-block-icon) {
-	@apply h-4 w-4 max-w-4 shrink-0 rounded-sm border-0 object-contain;
-	margin-inline: 0;
+	@apply h-4 w-4 max-w-4 shrink-0 rounded-sm border-0 object-contain p-0 shadow-none;
+	background: none;
 }
 
-/* Без JS падение только сюда: базовые отступы и рамка еще на голом <pre>. */
+.post-content :global(.code-block-body) {
+	@apply overflow-x-auto rounded-xl py-3.5 text-[13px] leading-[1.42857];
+}
+
 .post-content :global(pre) {
-	@apply overflow-x-auto rounded-lg border border-border p-4;
+	@apply w-max min-w-full pr-8 pl-[23px] font-mono;
+	background: transparent !important;
 }
 
 .post-content :global(.code-block pre) {
-	@apply rounded-none border-0;
+	@apply pt-8;
 }
 
 .post-content :global(pre code) {
-	@apply rounded-none border-0 bg-transparent p-0 font-mono;
+	@apply rounded-none border-0 bg-transparent p-0 font-mono text-[13px];
 }
 
-.post-content :global(hr) {
-	@apply border-border;
+/* Shiki в двух темах: цвет берем из нужной переменной. */
+.post-content :global(pre span) {
+	color: var(--shiki-light);
 }
 
-/* Таблица прокручивается внутри колонки, не перекрывая оглавление. */
+:global(.dark) .post-content :global(pre span) {
+	color: var(--shiki-dark);
+}
+
+/* Таблица: серая подложка, тело - белая «карточка» внутри. */
 .post-content :global(.post-table) {
-	@apply w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-border;
+	@apply w-full max-w-full min-w-0 overflow-x-auto rounded-[20px] bg-surface-secondary px-1 pb-1;
 }
 
 .post-content :global(table) {
-	@apply w-full border-collapse text-left text-sm leading-relaxed;
+	@apply w-full border-separate border-spacing-0 text-left text-sm;
 }
 
 .post-content :global(th) {
-	@apply border-b border-border bg-muted px-4 py-2.5 font-semibold text-foreground;
+	@apply px-4 py-2.5 text-xs leading-4 font-medium text-muted;
 }
 
 .post-content :global(td) {
-	@apply border-b border-border px-4 py-2.5 text-muted-foreground;
+	@apply border-b border-separator/50 bg-surface px-4 py-3 align-middle leading-5;
 }
 
+.post-content :global(tbody tr:first-child td:first-child) {
+	@apply rounded-tl-2xl;
+}
+
+.post-content :global(tbody tr:first-child td:last-child) {
+	@apply rounded-tr-2xl;
+}
+
+.post-content :global(tbody tr:last-child td) {
+	@apply border-b-0;
+}
+
+.post-content :global(tbody tr:last-child td:first-child) {
+	@apply rounded-bl-2xl;
+}
+
+.post-content :global(tbody tr:last-child td:last-child) {
+	@apply rounded-br-2xl;
+}
+
+/* Картинка в тексте - в такой же рамке, как обложка. */
 .post-content :global(img) {
-	@apply block h-auto max-w-full rounded-xl border border-border;
-}
-
-.post-content :global(.link-preview) {
-	--link-preview-width: 100%;
-	--link-preview-padding-inline: 1rem;
-	--link-preview-padding-block: 0.875rem;
-	--link-preview-corners: 0.5rem;
-	--link-preview-description-lines: 2;
-
-	@apply overflow-hidden border border-border bg-muted text-foreground;
-}
-
-.post-content :global(.link-preview__title) {
-	@apply text-base leading-snug font-semibold no-underline;
-}
-
-.post-content :global(.link-preview__domain),
-.post-content :global(.link-preview__description) {
-	@apply text-sm leading-relaxed text-muted-foreground;
-}
-
-.post-content :global(.link-preview--no-metadata) {
-	display: none;
-}
-
-.post-content
-	:global(
-		.link-preview:not(.link-preview--no-metadata) + .link-preview-fallback
-	) {
-	display: none;
-}
-
-.post-content :global(.link-preview img) {
-	@apply rounded-none border-0;
-	width: 100%;
-	max-width: 100%;
-	margin-inline: 0;
+	@apply block h-auto max-w-full rounded-[24px] bg-surface p-1 shadow-surface max-sm:rounded-[20px];
 }
 
 .post-content :global(figure) {
@@ -319,46 +347,60 @@ const postUrl = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 }
 
 .post-content :global(figcaption) {
-	@apply text-center text-sm text-balance text-muted-foreground;
+	@apply text-center text-sm text-balance text-muted;
 }
 
-/* Иллюстрации сохраняют пропорции и ширину своей ячейки. */
 .post-content :global(.post-gallery) {
 	@apply grid min-w-0 gap-4;
 }
 
 .post-content :global(.post-gallery img) {
-	@apply h-auto object-contain;
-	width: 100%;
-	max-width: 100%;
-	margin-inline: 0;
+	@apply h-auto w-full object-contain;
 }
 
-/* Favicon в ProjectLink - маленькая иконка, а не фото: без wide-breakout. */
+/* Favicon в ProjectLink - маленькая иконка, а не фото: без рамки. */
 .post-content :global(img.project-favicon) {
-	@apply h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain;
-	margin-inline: 0;
+	@apply h-[18px] w-[18px] max-w-[18px] rounded-sm border-0 object-contain p-0 shadow-none;
+	background: none;
+}
+
+.post-content :global(.link-preview) {
+	--link-preview-width: 100%;
+	--link-preview-padding-inline: 1rem;
+	--link-preview-padding-block: 0.875rem;
+	--link-preview-corners: 1.5rem;
+	--link-preview-description-lines: 2;
+
+	@apply overflow-hidden bg-surface text-foreground shadow-surface;
+}
+
+.post-content :global(.link-preview__title) {
+	@apply text-base leading-snug font-medium no-underline;
+}
+
+.post-content :global(.link-preview__domain),
+.post-content :global(.link-preview__description) {
+	@apply text-sm leading-relaxed text-muted;
+}
+
+.post-content :global(.link-preview img) {
+	@apply w-full max-w-full rounded-none p-0 shadow-none;
 }
 </style>
 
 <script
 	is:inline
 	define:vars={{
-		copyLabel: t("article.code.copy"),
-		copiedLabel: t("article.code.copied"),
-		postTitle: title,
+		postTitle: card.title,
 		postUrl,
 	}}
 >
 /*
- * Разметка блока кода приходит с сервера (`CodeBlock.astro`) - здесь только
+ * Разметка блока кода приходит с сервера (`CodeBlock.tsx`) - здесь только
  * поведение: копирование и меню «Открыть».
  */
-const ICONS = {
-	copy: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
-	check:
-		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>',
-};
+const CHECK_ICON =
+	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
 
 /*
  * `prefill` - адрес, который принимает готовый промт параметром `q`.
@@ -380,10 +422,7 @@ const OPEN_TARGETS = {
 /* Длинный `q` режется прокси и самими сервисами - тогда падаем на буфер. */
 const MAX_URL_LENGTH = 6000;
 
-/*
- * Промт всегда на английском: он адресован ИИ-сервису, а не читателю.
- * Внутри - ссылка на пост, его название и сам скопированный код.
- */
+/* Промт всегда на английском: он адресован ИИ-сервису, а не читателю. */
 function buildPrompt(code, language) {
 	return [
 		`I'm reading the article "${postTitle}" at ${postUrl}.`,
@@ -445,13 +484,17 @@ document.querySelectorAll(".post-content .code-block").forEach((block) => {
 	const codeText = () => code?.textContent ?? "";
 
 	const copyButton = block.querySelector(".code-block-copy");
+	const copyIcon = copyButton?.innerHTML;
+	const copyLabel = copyButton?.getAttribute("aria-label");
 	copyButton?.addEventListener("click", () => {
 		navigator.clipboard
 			.writeText(codeText())
 			.then(() => {
-				copyButton.innerHTML = `${ICONS.check}<span>${copiedLabel}</span>`;
+				copyButton.innerHTML = CHECK_ICON;
+				copyButton.setAttribute("aria-label", copyButton.dataset.copiedLabel);
 				setTimeout(() => {
-					copyButton.innerHTML = `${ICONS.copy}<span>${copyLabel}</span>`;
+					copyButton.innerHTML = copyIcon;
+					copyButton.setAttribute("aria-label", copyLabel);
 				}, 2000);
 			})
 			.catch(() => {});

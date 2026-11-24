@@ -32,7 +32,6 @@ const { post, postLocales } = Astro.props;
 	htmlLang="ru"
 	alternates={buildAlternates(Astro.url.pathname, postLocales)}
 	ogImage={post.data.cover.src}
-	class="min-w-0 max-w-5xl"
 >
 	<PostArticle post={post} locale="ru" />
 </Layout>

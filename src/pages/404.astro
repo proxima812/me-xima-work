@@ -1,6 +1,7 @@
 ---
-import PageTitle from "@/components/ui/PageTitle.astro";
+import BlogHeading from "@/components/blog/BlogHeading";
 import { defaultLocale, useTranslations } from "@/i18n";
+import { localeHref } from "@/i18n/client";
 import Layout from "@/layouts/Layout.astro";
 
 const t = useTranslations(defaultLocale);
@@ -11,5 +12,10 @@ const t = useTranslations(defaultLocale);
 	description={t("notFound.description")}
 	indexRobots={false}
 >
-	<PageTitle class="text-center">{t("notFound.heading")}</PageTitle>
+	<div class="site-container flex flex-col items-center pt-14 text-center sm:pt-28">
+		<BlogHeading eyebrow="404" top={t("notFound.heading")} bottom={t("notFound.description")} />
+		<a href={localeHref(defaultLocale)} class="button button-primary enter mt-8" style="--enter-delay: 400ms">
+			{t("nav.back")}
+		</a>
+	</div>
 </Layout>

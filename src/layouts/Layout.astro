@@ -1,13 +1,18 @@
 ---
 import { Font } from "astro:assets";
-import type { Props as ContainerProps } from "@/components/partials/Container.astro";
-import Container from "@/components/partials/Container.astro";
+import Footer, { type FooterGroup } from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
+import Preloader from "@/components/layout/Preloader";
 import GoogleTagManager from "@/components/SEO/Analytics/GoogleTagManager.astro";
 import YandexMetrika from "@/components/SEO/Analytics/YandexMetrika.astro";
 import SEO from "@/components/SEO/SEO.astro";
 import "@/styles/tailwind.css";
 import { config } from "main.config";
 import type { SeoKeywords, SeoPageType } from "@/config/types";
+import { projects } from "@/data/projects";
+import { getLocaleFromUrl } from "@/i18n";
+import { localeHref, otherLocale, useTranslations } from "@/i18n/client";
+import { getCategoryStats } from "@/utils/blog";
 
 interface Props {
 	title?: string;
@@ -25,11 +30,6 @@ interface Props {
 	htmlLang?: string;
 	markdownURL?: string | URL;
 	alternates?: Array<{ hreflang: string; href: string | URL }>;
-	/** Классы для контейнера содержимого. */
-	class?: string;
-	gap?: string;
-	containerOff?: boolean;
-	innerSetOff?: boolean;
 }
 
 const {
@@ -48,10 +48,6 @@ const {
 	htmlLang = config.site.language,
 	markdownURL,
 	alternates,
-	class: className,
-	containerOff,
-	innerSetOff,
-	gap,
 } = Astro.props;
 
 const seoProps = {
@@ -71,16 +67,94 @@ const seoProps = {
 	...(alternates && { alternates }),
 };
 
-const containerAttrs = {
-	...(className && { class: className }),
-	...(containerOff !== undefined && { containerOff }),
-	...(innerSetOff !== undefined && { innerSetOff }),
-	...(gap && { gap }),
-} satisfies ContainerProps;
+const pageLocale = getLocaleFromUrl(Astro.url);
+const t = useTranslations(pageLocale);
+const githubUrl = "https://github.com/proxima812";
+
+// Переключатель языка ведет на эту же страницу в другой локали, если она есть.
+const otherLang = otherLocale(pageLocale);
+const languageHref = String(
+	alternates?.find((alternate) => alternate.hreflang === otherLang)?.href ??
+		localeHref(otherLang),
+);
+
+const categoryStats = await getCategoryStats(pageLocale);
+const navCategories = categoryStats
+	.toSorted((a, b) => b.count - a.count)
+	.map(({ category, count }) => ({
+		id: category.id,
+		label: category.label[pageLocale] ?? category.id,
+		icon: category.icon,
+		count,
+		href: `${localeHref(pageLocale, "articles")}?category=${category.id}`,
+	}));
+
+const footerGroups: FooterGroup[] = [
+	{
+		title: t("footer.blog"),
+		href: localeHref(pageLocale, "articles"),
+		links: [
+			{ label: t("nav.home"), href: localeHref(pageLocale) },
+			{ label: t("nav.articles"), href: localeHref(pageLocale, "articles") },
+			{ label: t("nav.categories"), href: localeHref(pageLocale, "articles/categories") },
+			{ label: t("header.language"), href: languageHref },
+		],
+	},
+	{
+		title: t("footer.categories"),
+		href: localeHref(pageLocale, "articles/categories"),
+		links: navCategories.slice(0, 8).map(({ label, href }) => ({ label, href })),
+	},
+	{
+		title: t("footer.projects"),
+		href: githubUrl,
+		links: (projects[pageLocale] ?? []).slice(0, 8).map((project) => ({
+			label: project.title,
+			href: project.href,
+		})),
+	},
+	{
+		title: t("footer.links"),
+		href: githubUrl,
+		links: [
+			{ label: "GitHub", href: githubUrl },
+			{ label: "Sitemap", href: "/sitemap-index.xml" },
+		],
+	},
+];
 ---
 
 <html lang={htmlLang}>
 	<head>
+		{/*
+		 * До первой отрисовки: класс темы (иначе темная тема мигнет светлой)
+		 * и решение о прелоадере - он показывается один раз за сессию.
+		 */}
+		<script is:inline>
+			(() => {
+				const root = document.documentElement;
+				const stored = localStorage.getItem("theme");
+				const dark =
+					stored === "dark" ||
+					(stored !== "light" &&
+						window.matchMedia("(prefers-color-scheme: dark)").matches);
+				root.classList.add(dark ? "dark" : "light");
+
+				const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+				if (!reduce && !sessionStorage.getItem("preloader-seen")) {
+					root.classList.add("preloading");
+					// Страховка: если React не загрузился, шторка не должна
+					// закрывать страницу навсегда.
+					setTimeout(() => root.classList.remove("preloading"), 5000);
+				}
+			})();
+		</script>
+		<style is:inline>
+			html:not(.preloading) [data-preloader="idle"] {
+				display: none;
+			}
+		</style>
+
 		{config.site.analytics.googleTagManager.enabled && (
 			<GoogleTagManager gtmId={config.site.analytics.googleTagManager.id} />
 		)}
@@ -90,10 +164,39 @@ const containerAttrs = {
 		)}
 		<SEO {...seoProps} />
 		<Font cssVariable="--font-inter" preload />
+		<Font cssVariable="--font-geist" preload />
 	</head>
 	<body>
-		<Container {...containerAttrs}>
-			<slot />
-		</Container>
+		<Preloader client:load words={t("preloader.words").split("|")} />
+
+		<div class="flex min-h-svh flex-col items-center overflow-x-clip">
+			<a
+				href="#main-content"
+				class="sr-only fixed top-4 left-4 z-[100] rounded-full bg-surface px-4 py-2 text-sm font-medium text-foreground shadow-overlay focus:not-sr-only"
+			>
+				{t("site.skip")}
+			</a>
+
+			<Header
+				client:load
+				locale={pageLocale}
+				categories={navCategories}
+				languageHref={languageHref}
+				githubUrl={githubUrl}
+				countLabel={t("articleCategories.count")}
+			/>
+
+			<main id="main-content" tabindex="-1" class="w-full flex-1">
+				<slot />
+			</main>
+
+			<Footer
+				client:visible
+				locale={pageLocale}
+				groups={footerGroups}
+				githubUrl={githubUrl}
+				year={new Date().getFullYear()}
+			/>
+		</div>
 	</body>
 </html>

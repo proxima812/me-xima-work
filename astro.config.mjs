@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import mdx from "@astrojs/mdx";
+import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import dualmark from "@dualmark/astro";
 import tailwindcss from "@tailwindcss/vite";
@@ -82,20 +83,35 @@ export default defineConfig({
 			cssVariable: "--font-inter",
 			provider: fontProviders.google(),
 			subsets: ["latin", "cyrillic"],
-			weights: [400, 500, 700],
+			weights: [400, 500],
+			styles: ["normal"],
+		},
+		{
+			name: "Geist",
+			cssVariable: "--font-geist",
+			provider: fontProviders.google(),
+			subsets: ["latin", "cyrillic"],
+			weights: [500],
 			styles: ["normal"],
 		},
 	],
 
-	// Светлая тема подсветки кода — сайт не поддерживает тёмный режим.
+	// Две темы подсветки: цвета уходят в CSS-переменные `--shiki-light` /
+	// `--shiki-dark`, нужная выбирается классом темы на <html>.
 	markdown: {
 		shikiConfig: {
-			theme: "github-light",
+			themes: { light: "github-light", dark: "github-dark" },
+			defaultColor: false,
 		},
 	},
 
 	vite: {
 		plugins: [tailwindcss()],
+		optimizeDeps: {
+			// React отдается в CommonJS. Без пребандла dev-сервер может
+			// отдать react-dom/client как есть, и острова не гидрируются.
+			include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime", "motion/react"],
+		},
 		ssr: {
 			// Иначе Vite пытается забандлить пакеты, рассчитанные на выполнение
 			// в Node на этапе конфигурации, а не на прохождение через сборщик.
@@ -108,6 +124,7 @@ export default defineConfig({
 	},
 
 	integrations: [
+		react(),
 		mdx(),
 		sitemap({
 			i18n: {

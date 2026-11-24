@@ -1,0 +1,37 @@
+---
+import BlogHeading from "@/components/blog/BlogHeading";
+import BlogPosts from "@/components/blog/BlogPosts";
+import ClosingCta from "@/components/blog/ClosingCta";
+import type { LocaleCode } from "@/config/types";
+import { useTranslations } from "@/i18n/client";
+import { getCategoryStats, getPosts } from "@/utils/blog";
+import { toPostCards } from "@/utils/postCards";
+
+interface Props {
+	locale: LocaleCode;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const posts = await toPostCards(await getPosts(locale), locale);
+const categories = (await getCategoryStats(locale))
+	.toSorted((a, b) => b.count - a.count)
+	.map(({ category }) => ({ id: category.id, label: category.label[locale] ?? category.id }));
+---
+
+<div class="site-container pt-8 sm:pt-[72px]">
+	<BlogHeading
+		eyebrow={t("blog.eyebrow")}
+		top={t("blog.heading.top")}
+		bottom={t("blog.heading.bottom")}
+	/>
+	<BlogPosts
+		client:load
+		locale={locale}
+		posts={posts}
+		author={t("site.author")}
+		categories={categories}
+	/>
+</div>
+
+<ClosingCta client:visible locale={locale} githubUrl="https://github.com/proxima812" />

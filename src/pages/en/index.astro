@@ -1,6 +1,5 @@
 ---
-import PostGrid from "@/components/blog/PostGrid.astro";
-import Hero from "@/components/home/Hero.astro";
+import HomePage from "@/components/pages/HomePage.astro";
 import { buildAlternates, useTranslations } from "@/i18n";
 import Layout from "@/layouts/Layout.astro";
 
@@ -15,7 +14,5 @@ const t = useTranslations("en");
 	alternates={buildAlternates(Astro.url.pathname)}
 	markdownURL="/en.md"
 >
-	<Hero locale="en" />
-
-	<PostGrid locale="en" limit={9} />
+	<HomePage locale="en" />
 </Layout>
